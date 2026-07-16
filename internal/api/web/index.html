@@ -10,115 +10,155 @@
     <header class="topbar">
       <div>
         <h1>Nala Chores</h1>
-        <p>Submit remote agent runs into your Minikube sandbox.</p>
+        <p>Configuration-driven OpenCode sessions for GitHub and Linear work.</p>
       </div>
       <div class="status-pill" id="apiStatus">Checking API</div>
     </header>
 
     <main class="layout">
-      <section class="panel submit-panel">
-        <div class="panel-header">
-          <h2>New Run</h2>
-          <span>Model default: opencode/big-pickle</span>
-        </div>
-        <form id="runForm">
-          <label>
-            Repository URL
-            <input name="repo_url" required placeholder="https://github.com/org/repo.git" autocomplete="off" />
-          </label>
-          <div class="field-grid">
-            <label>
-              Branch
-              <input name="source_branch" required placeholder="feature/my-change" autocomplete="off" />
-            </label>
-            <label>
-              Work directory
-              <input name="work_directory" value="." autocomplete="off" />
-            </label>
-          </div>
-          <label>
-            Prompt
-            <textarea name="prompt" required rows="7" placeholder="Implement the requested change and update tests."></textarea>
-          </label>
-          <div class="field-grid">
-            <label>
-              Request ID
-              <input name="request_id" placeholder="auto-generated" autocomplete="off" />
-            </label>
-            <label>
-              Issue key
-              <input name="issue_key" placeholder="JIRA-123" autocomplete="off" />
-            </label>
-          </div>
-          <div class="field-grid">
-            <label>
-              Harness
-              <input name="harness_name" value="default" autocomplete="off" />
-            </label>
-            <label>
-              Sandbox size
-              <select name="sandbox_size">
-                <option value="large">large</option>
-                <option value="xlarge">xlarge</option>
-                <option value="small">small</option>
-                <option value="2xlarge">2xlarge</option>
-              </select>
-            </label>
-          </div>
-          <div class="toggles">
-            <label class="check">
-              <input type="checkbox" name="push_changes" />
-              <span>Push changes</span>
-            </label>
-            <label class="check">
-              <input type="checkbox" name="create_mr" />
-              <span>Create MR</span>
-            </label>
-          </div>
-          <button class="primary" type="submit">Submit Run</button>
-          <p class="form-message" id="formMessage"></p>
-        </form>
-      </section>
+      <nav class="menu">
+        <button class="menu-item active" data-view="configs" type="button">Configurations</button>
+        <button class="menu-item" data-view="run" type="button">Run Session</button>
+        <button class="menu-item" data-view="history" type="button">History</button>
+      </nav>
 
-      <section class="panel runs-panel">
-        <div class="panel-header">
-          <h2>Runs</h2>
-          <button id="refreshRuns" class="secondary" type="button">Refresh</button>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Request</th>
-                <th>Phase</th>
-                <th>Branch</th>
-                <th>Updated</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="runsBody">
-              <tr><td colspan="5" class="empty">No runs yet.</td></tr>
-            </tbody>
-          </table>
+      <section class="view active" id="configsView">
+        <div class="panel">
+          <div class="panel-header">
+            <h2>Configurations</h2>
+            <button class="secondary" id="refreshConfigs" type="button">Refresh</button>
+          </div>
+          <div class="split">
+            <form id="configForm">
+              <label>
+                Name
+                <input name="name" required placeholder="Nala API" autocomplete="off" />
+              </label>
+              <label>
+                Repository URL
+                <input name="repo_url" required placeholder="https://github.com/org/repo.git" autocomplete="off" />
+              </label>
+              <div class="field-grid">
+                <label>
+                  Branch
+                  <input name="source_branch" value="main" autocomplete="off" />
+                </label>
+                <label>
+                  Work directory
+                  <input name="work_directory" value="." autocomplete="off" />
+                </label>
+              </div>
+              <div class="field-grid">
+                <label>
+                  Harness
+                  <input name="harness_name" value="default" autocomplete="off" />
+                </label>
+                <label>
+                  Sandbox size
+                  <select name="sandbox_size">
+                    <option value="large">large</option>
+                    <option value="xlarge">xlarge</option>
+                    <option value="small">small</option>
+                    <option value="2xlarge">2xlarge</option>
+                  </select>
+                </label>
+              </div>
+              <label>
+                GitHub API key
+                <input name="github_token" type="password" placeholder="github_pat_..." autocomplete="new-password" />
+              </label>
+              <label>
+                Linear API key
+                <input name="linear_api_key" type="password" placeholder="lin_api_..." autocomplete="new-password" />
+              </label>
+              <label>
+                OpenCode API key
+                <input name="opencode_api_key" type="password" placeholder="sk-..." autocomplete="new-password" />
+              </label>
+              <div class="toggles">
+                <label class="check"><input type="checkbox" name="push_changes" /><span>Push changes</span></label>
+                <label class="check"><input type="checkbox" name="create_mr" /><span>Create MR</span></label>
+              </div>
+              <button class="primary" type="submit">Save Configuration</button>
+              <p class="form-message" id="configMessage"></p>
+            </form>
+
+            <div class="list" id="configList">
+              <div class="empty">No configurations yet.</div>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section class="panel detail-panel">
-        <div class="panel-header">
-          <h2>Run Detail</h2>
-          <button id="stopRun" class="danger" type="button" disabled>Stop</button>
-        </div>
-        <div class="detail-grid" id="runDetail">
-          <div class="empty">Select a run to inspect it.</div>
+      <section class="view" id="runView">
+        <div class="panel run-panel">
+          <div class="panel-header">
+            <h2>Run Session</h2>
+            <span>Uses the selected configuration</span>
+          </div>
+          <form id="sessionForm">
+            <label>
+              Configuration
+              <select name="config_id" id="runConfigSelect" required></select>
+            </label>
+            <label>
+              Prompt
+              <textarea name="prompt" required rows="9" placeholder="Describe the work for the agent."></textarea>
+            </label>
+            <label>
+              Linear issue key
+              <input name="linear_issue_key" placeholder="Optional, e.g. NAL-123" autocomplete="off" />
+            </label>
+            <button class="primary" type="submit">Run Session</button>
+            <p class="form-message" id="sessionMessage"></p>
+          </form>
         </div>
       </section>
 
-      <section class="panel logs-panel">
-        <div class="panel-header">
-          <h2>Logs</h2>
-          <button id="refreshLogs" class="secondary" type="button" disabled>Refresh Logs</button>
+      <section class="view" id="historyView">
+        <div class="panel">
+          <div class="panel-header">
+            <h2>Session History</h2>
+            <div class="inline-actions">
+              <select id="historyConfigSelect"></select>
+              <button id="refreshHistory" class="secondary" type="button">Refresh</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Request</th>
+                  <th>Phase</th>
+                  <th>Config</th>
+                  <th>Updated</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="runsBody">
+                <tr><td colspan="5" class="empty">No sessions yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-        <pre id="logs">No run selected.</pre>
+
+        <div class="panel detail-panel">
+          <div class="panel-header">
+            <h2>Session Detail</h2>
+            <button id="stopRun" class="danger" type="button" disabled>Stop</button>
+          </div>
+          <div class="detail-grid" id="runDetail">
+            <div class="empty">Select a session to inspect it.</div>
+          </div>
+        </div>
+
+        <div class="panel logs-panel">
+          <div class="panel-header">
+            <h2>Stored Logs</h2>
+            <button id="refreshLogs" class="secondary" type="button" disabled>Refresh Logs</button>
+          </div>
+          <pre id="logs">No session selected.</pre>
+        </div>
       </section>
     </main>
 

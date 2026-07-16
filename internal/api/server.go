@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"embed"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -30,6 +31,7 @@ type Config struct {
 	ApplyJobs     bool
 	KubectlPath   string
 	DefaultAPIURL string
+	StatePath     string
 }
 
 type Server struct {
@@ -54,12 +56,15 @@ func NewServer(cfg Config, log *slog.Logger) *Server {
 	if cfg.KubectlPath == "" {
 		cfg.KubectlPath = "kubectl"
 	}
-	return &Server{store: store.NewMemory(), cfg: cfg, log: log}
+	return &Server{store: store.NewMemory(cfg.StatePath), cfg: cfg, log: log}
 }
 
 func (s *Server) Routes() http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("GET /", s.webHandler())
+	mux.HandleFunc("POST /configs", s.saveConfig)
+	mux.HandleFunc("GET /configs", s.listConfigs)
+	mux.HandleFunc("GET /configs/{config_id}", s.getConfig)
 	mux.HandleFunc("POST /runs", s.createRun)
 	mux.HandleFunc("GET /runs", s.listRuns)
 	mux.HandleFunc("GET /runs/{request_id}", s.getRun)
@@ -69,6 +74,41 @@ func (s *Server) Routes() http.Handler {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	})
 	return requestLogger(s.log, mux)
+}
+
+func (s *Server) saveConfig(w http.ResponseWriter, r *http.Request) {
+	var input runner.ConfigurationInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid JSON request")
+		return
+	}
+	if input.Name == "" {
+		writeError(w, http.StatusBadRequest, "name is required")
+		return
+	}
+	if input.RepoURL == "" {
+		writeError(w, http.StatusBadRequest, "repo_url is required")
+		return
+	}
+	cfg, err := s.store.SaveConfig(input)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, cfg)
+}
+
+func (s *Server) listConfigs(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, runner.ConfigurationList{Configurations: s.store.ListConfigs()})
+}
+
+func (s *Server) getConfig(w http.ResponseWriter, r *http.Request) {
+	cfg, err := s.store.GetConfig(r.PathValue("config_id"))
+	if err != nil {
+		writeError(w, http.StatusNotFound, "configuration not found")
+		return
+	}
+	writeJSON(w, http.StatusOK, cfg)
 }
 
 func (s *Server) createRun(w http.ResponseWriter, r *http.Request) {
@@ -82,7 +122,19 @@ func (s *Server) createRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	run, created := s.store.Create(req)
+	if req.RequestID == "" {
+		req.RequestID = makeRequestID(req.ConfigID)
+	}
+
+	run, created, err := s.store.Create(req)
+	if err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			writeError(w, http.StatusNotFound, "configuration not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
 	if !created {
 		writeJSON(w, http.StatusOK, run)
 		return
@@ -106,6 +158,10 @@ func (s *Server) getRunLogs(w http.ResponseWriter, r *http.Request) {
 	run, err := s.store.Get(id)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "run not found")
+		return
+	}
+	if run.Logs != "" {
+		writeJSON(w, http.StatusOK, map[string]string{"logs": run.Logs})
 		return
 	}
 	if run.JobName == "" {
@@ -143,6 +199,10 @@ func (s *Server) listRuns(w http.ResponseWriter, r *http.Request) {
 		}
 		limit = parsed
 	}
+	if configID := r.URL.Query().Get("config_id"); configID != "" {
+		writeJSON(w, http.StatusOK, runner.RunList{Runs: s.store.ListByConfig(configID, limit)})
+		return
+	}
 	writeJSON(w, http.StatusOK, runner.RunList{Runs: s.store.List(limit)})
 }
 
@@ -168,6 +228,7 @@ func (s *Server) stopRun(w http.ResponseWriter, r *http.Request) {
 		run.Message = "cancelled by API request"
 		run.CompletedAt = &now
 	})
+	s.captureLogs(id, run.JobName)
 	writeJSON(w, http.StatusOK, run)
 }
 
@@ -182,10 +243,19 @@ func (s *Server) provision(id string) {
 		return
 	}
 
+	secretName := s.cfg.SecretName
+	if run.ConfigID != "" {
+		secretName = "runner-secret-" + run.JobName
+		if err := s.applyRunSecret(run, secretName); err != nil {
+			s.fail(id, err)
+			return
+		}
+	}
+
 	manifest, err := k8s.RenderJob(run, k8s.JobOptions{
 		Namespace:  s.cfg.Namespace,
 		Image:      s.cfg.Image,
-		SecretName: s.cfg.SecretName,
+		SecretName: secretName,
 	})
 	if err != nil {
 		s.fail(id, err)
@@ -248,6 +318,7 @@ func (s *Server) watchJob(id, jobName string) {
 				})
 			}
 			if done {
+				s.captureLogs(id, jobName)
 				return
 			}
 		case <-deadline:
@@ -297,19 +368,106 @@ func (s *Server) jobPhase(jobName string) (runner.Phase, string, bool) {
 	return runner.PhaseProvisioning, "waiting for sandbox pod", false
 }
 
+func (s *Server) applyRunSecret(run runner.Run, secretName string) error {
+	secret, err := s.store.GetConfigSecret(run.ConfigID)
+	if err != nil {
+		return err
+	}
+	data := map[string]string{}
+	if secret.GitHubToken != "" {
+		data["git_token"] = secret.GitHubToken
+	}
+	if secret.OpenCodeAPIKey != "" {
+		data["opencode_api_key"] = secret.OpenCodeAPIKey
+	}
+	if secret.LinearAPIKey != "" {
+		data["linear_api_key"] = secret.LinearAPIKey
+	}
+	if len(data) == 0 {
+		return nil
+	}
+
+	manifest := map[string]any{
+		"apiVersion": "v1",
+		"kind":       "Secret",
+		"metadata": map[string]string{
+			"name":      secretName,
+			"namespace": s.cfg.Namespace,
+		},
+		"type": "Opaque",
+		"data": encodeSecretData(data),
+	}
+	body, err := json.Marshal(manifest)
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(s.cfg.KubectlPath, "apply", "-f", "-")
+	cmd.Stdin = bytes.NewReader(body)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("kubectl apply run secret failed: %w: %s", err, strings.TrimSpace(string(out)))
+	}
+	return nil
+}
+
+func encodeSecretData(values map[string]string) map[string]string {
+	out := map[string]string{}
+	for key, value := range values {
+		out[key] = base64.StdEncoding.EncodeToString([]byte(value))
+	}
+	return out
+}
+
+func (s *Server) captureLogs(id, jobName string) {
+	if jobName == "" || !s.cfg.ApplyJobs {
+		return
+	}
+	cmd := exec.Command(s.cfg.KubectlPath, "-n", s.cfg.Namespace, "logs", "job/"+jobName, "--tail", "1000")
+	out, err := cmd.CombinedOutput()
+	logs := string(out)
+	if err != nil && strings.TrimSpace(logs) == "" {
+		logs = "Logs were not available when the run completed."
+	}
+	_, _ = s.store.Update(id, func(run *runner.Run) {
+		run.Logs = logs
+	})
+}
+
 func validateRequest(req runner.RunRequest) error {
 	switch {
-	case req.RequestID == "":
-		return errors.New("request_id is required")
-	case req.RepoURL == "":
+	case req.ConfigID == "" && req.RequestID == "":
+		return errors.New("request_id is required when config_id is not supplied")
+	case req.ConfigID == "" && req.RepoURL == "":
 		return errors.New("repo_url is required")
-	case req.SourceBranch == "":
+	case req.ConfigID == "" && req.SourceBranch == "":
 		return errors.New("source_branch is required")
 	case req.Prompt == "":
 		return errors.New("prompt is required")
 	default:
 		return nil
 	}
+}
+
+func makeRequestID(configID string) string {
+	prefix := "run"
+	if configID != "" {
+		prefix = configID
+	}
+	clean := strings.ToLower(prefix)
+	var b strings.Builder
+	for _, r := range clean {
+		switch {
+		case r >= 'a' && r <= 'z', r >= '0' && r <= '9':
+			b.WriteRune(r)
+		default:
+			b.WriteByte('-')
+		}
+	}
+	prefix = strings.Trim(b.String(), "-")
+	if prefix == "" {
+		prefix = "run"
+	}
+	return fmt.Sprintf("%s-%d", prefix, time.Now().UTC().Unix())
 }
 
 func requestLogger(log *slog.Logger, next http.Handler) http.Handler {

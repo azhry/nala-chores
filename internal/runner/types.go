@@ -21,42 +21,92 @@ const (
 )
 
 type RunRequest struct {
-	RequestID     string `json:"request_id"`
-	RepoURL       string `json:"repo_url"`
-	SourceBranch  string `json:"source_branch"`
-	Prompt        string `json:"prompt"`
-	WorkDirectory string `json:"work_directory"`
-	CreateMR      bool   `json:"create_mr"`
-	IssueKey      string `json:"issue_key"`
-	HarnessName   string `json:"harness_name"`
-	SandboxSize   string `json:"sandbox_size"`
-	ConfigPath    string `json:"config_path"`
-	PushChanges   bool   `json:"push_changes"`
+	RequestID      string `json:"request_id"`
+	ConfigID       string `json:"config_id"`
+	RepoURL        string `json:"repo_url"`
+	SourceBranch   string `json:"source_branch"`
+	Prompt         string `json:"prompt"`
+	WorkDirectory  string `json:"work_directory"`
+	CreateMR       bool   `json:"create_mr"`
+	IssueKey       string `json:"issue_key"`
+	LinearIssueKey string `json:"linear_issue_key"`
+	HarnessName    string `json:"harness_name"`
+	SandboxSize    string `json:"sandbox_size"`
+	ConfigPath     string `json:"config_path"`
+	PushChanges    bool   `json:"push_changes"`
 }
 
 type Run struct {
-	RequestID     string     `json:"request_id"`
-	RepoURL       string     `json:"repo_url"`
-	SourceBranch  string     `json:"source_branch"`
-	Prompt        string     `json:"prompt,omitempty"`
-	WorkDirectory string     `json:"work_directory"`
-	CreateMR      bool       `json:"create_mr"`
-	IssueKey      string     `json:"issue_key,omitempty"`
-	HarnessName   string     `json:"harness_name"`
-	SandboxSize   string     `json:"sandbox_size"`
-	ConfigPath    string     `json:"config_path,omitempty"`
-	PushChanges   bool       `json:"push_changes"`
-	Phase         Phase      `json:"phase"`
-	Message       string     `json:"message,omitempty"`
-	JobName       string     `json:"job_name,omitempty"`
-	LogsCommand   string     `json:"logs_command,omitempty"`
-	MRURL         string     `json:"mr_url,omitempty"`
-	ExitCode      *int       `json:"exit_code,omitempty"`
-	CreatedAt     time.Time  `json:"created_at"`
-	UpdatedAt     time.Time  `json:"updated_at"`
-	CompletedAt   *time.Time `json:"completed_at,omitempty"`
+	RequestID      string     `json:"request_id"`
+	ConfigID       string     `json:"config_id,omitempty"`
+	ConfigName     string     `json:"config_name,omitempty"`
+	RepoURL        string     `json:"repo_url"`
+	SourceBranch   string     `json:"source_branch"`
+	Prompt         string     `json:"prompt,omitempty"`
+	WorkDirectory  string     `json:"work_directory"`
+	CreateMR       bool       `json:"create_mr"`
+	IssueKey       string     `json:"issue_key,omitempty"`
+	LinearIssueKey string     `json:"linear_issue_key,omitempty"`
+	HarnessName    string     `json:"harness_name"`
+	SandboxSize    string     `json:"sandbox_size"`
+	ConfigPath     string     `json:"config_path,omitempty"`
+	PushChanges    bool       `json:"push_changes"`
+	Phase          Phase      `json:"phase"`
+	Message        string     `json:"message,omitempty"`
+	JobName        string     `json:"job_name,omitempty"`
+	LogsCommand    string     `json:"logs_command,omitempty"`
+	MRURL          string     `json:"mr_url,omitempty"`
+	ExitCode       *int       `json:"exit_code,omitempty"`
+	Logs           string     `json:"logs,omitempty"`
+	CreatedAt      time.Time  `json:"created_at"`
+	UpdatedAt      time.Time  `json:"updated_at"`
+	CompletedAt    *time.Time `json:"completed_at,omitempty"`
 }
 
 type RunList struct {
 	Runs []Run `json:"runs"`
+}
+
+type ConfigurationInput struct {
+	ID             string `json:"id"`
+	Name           string `json:"name"`
+	RepoURL        string `json:"repo_url"`
+	SourceBranch   string `json:"source_branch"`
+	WorkDirectory  string `json:"work_directory"`
+	HarnessName    string `json:"harness_name"`
+	SandboxSize    string `json:"sandbox_size"`
+	ConfigPath     string `json:"config_path"`
+	CreateMR       bool   `json:"create_mr"`
+	PushChanges    bool   `json:"push_changes"`
+	GitHubToken    string `json:"github_token"`
+	OpenCodeAPIKey string `json:"opencode_api_key"`
+	LinearAPIKey   string `json:"linear_api_key"`
+}
+
+type Configuration struct {
+	ID                string    `json:"id"`
+	Name              string    `json:"name"`
+	RepoURL           string    `json:"repo_url"`
+	SourceBranch      string    `json:"source_branch"`
+	WorkDirectory     string    `json:"work_directory"`
+	HarnessName       string    `json:"harness_name"`
+	SandboxSize       string    `json:"sandbox_size"`
+	ConfigPath        string    `json:"config_path,omitempty"`
+	CreateMR          bool      `json:"create_mr"`
+	PushChanges       bool      `json:"push_changes"`
+	HasGitHubToken    bool      `json:"has_github_token"`
+	HasOpenCodeAPIKey bool      `json:"has_opencode_api_key"`
+	HasLinearAPIKey   bool      `json:"has_linear_api_key"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
+}
+
+type ConfigurationSecret struct {
+	GitHubToken    string
+	OpenCodeAPIKey string
+	LinearAPIKey   string
+}
+
+type ConfigurationList struct {
+	Configurations []Configuration `json:"configurations"`
 }

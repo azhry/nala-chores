@@ -21,6 +21,7 @@ func main() {
 		SecretName:  env("RUNNER_SECRET_NAME", "runner-secrets"),
 		KubectlPath: env("KUBECTL", "kubectl"),
 		ApplyJobs:   envBool("RUNNER_APPLY_JOBS", true),
+		StatePath:   env("RUNNER_STATE_PATH", "/tmp/nala-chores-state.json"),
 	}
 
 	server := &http.Server{

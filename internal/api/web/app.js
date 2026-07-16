@@ -1,31 +1,24 @@
 const state = {
-  selectedID: "",
+  configs: [],
   runs: [],
+  selectedRunID: "",
 };
 
 const apiStatus = document.querySelector("#apiStatus");
-const form = document.querySelector("#runForm");
-const formMessage = document.querySelector("#formMessage");
+const configForm = document.querySelector("#configForm");
+const configMessage = document.querySelector("#configMessage");
+const configList = document.querySelector("#configList");
+const sessionForm = document.querySelector("#sessionForm");
+const sessionMessage = document.querySelector("#sessionMessage");
+const runConfigSelect = document.querySelector("#runConfigSelect");
+const historyConfigSelect = document.querySelector("#historyConfigSelect");
 const runsBody = document.querySelector("#runsBody");
 const runDetail = document.querySelector("#runDetail");
 const logs = document.querySelector("#logs");
-const refreshRuns = document.querySelector("#refreshRuns");
+const refreshConfigs = document.querySelector("#refreshConfigs");
+const refreshHistory = document.querySelector("#refreshHistory");
 const refreshLogs = document.querySelector("#refreshLogs");
 const stopRun = document.querySelector("#stopRun");
-
-function requestID(repo, branch) {
-  const repoName = repo.split("/").pop().replace(/\.git$/, "") || "repo";
-  const suffix = Math.floor(Date.now() / 1000);
-  return `ui-${repoName}-${branch}-${suffix}`.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-}
-
-function phaseClass(phase) {
-  return String(phase || "").toLowerCase();
-}
-
-function isTerminal(phase) {
-  return ["SUCCEEDED", "FAILED", "CANCELLED"].includes(phase);
-}
 
 async function api(path, options = {}) {
   const response = await fetch(path, {
@@ -44,34 +37,72 @@ async function checkHealth() {
     await api("/healthz");
     apiStatus.textContent = "API Online";
     apiStatus.className = "status-pill ok";
-  } catch (error) {
+  } catch {
     apiStatus.textContent = "API Offline";
     apiStatus.className = "status-pill bad";
   }
 }
 
+async function loadConfigs() {
+  const data = await api("/configs");
+  state.configs = data.configurations || [];
+  renderConfigs();
+  renderConfigSelects();
+}
+
 async function loadRuns() {
-  const data = await api("/runs?limit=50");
+  const configID = historyConfigSelect.value;
+  const suffix = configID ? `?limit=50&config_id=${encodeURIComponent(configID)}` : "?limit=50";
+  const data = await api(`/runs${suffix}`);
   state.runs = data.runs || [];
   renderRuns();
-  if (state.selectedID) {
-    const selected = state.runs.find((run) => run.request_id === state.selectedID);
+  if (state.selectedRunID) {
+    const selected = state.runs.find((run) => run.request_id === state.selectedRunID);
     if (selected) {
       renderDetail(selected);
     }
   }
 }
 
+function renderConfigs() {
+  if (!state.configs.length) {
+    configList.innerHTML = '<div class="empty">No configurations yet.</div>';
+    return;
+  }
+  configList.innerHTML = state.configs.map((cfg) => `
+    <article class="config-card" data-config="${escapeHTML(cfg.id)}">
+      <div>
+        <h3>${escapeHTML(cfg.name)}</h3>
+        <p>${escapeHTML(cfg.repo_url)}</p>
+      </div>
+      <div class="config-meta">
+        <span>${escapeHTML(cfg.source_branch)}</span>
+        <span>${escapeHTML(cfg.sandbox_size)}</span>
+        <span>${cfg.has_github_token ? "GitHub" : "No GitHub key"}</span>
+        <span>${cfg.has_linear_api_key ? "Linear" : "No Linear key"}</span>
+        <span>${cfg.has_opencode_api_key ? "OpenCode" : "No OpenCode key"}</span>
+      </div>
+    </article>
+  `).join("");
+}
+
+function renderConfigSelects() {
+  const options = state.configs.map((cfg) => `<option value="${escapeHTML(cfg.id)}">${escapeHTML(cfg.name)}</option>`).join("");
+  const allOption = '<option value="">All configurations</option>';
+  runConfigSelect.innerHTML = options || '<option value="">Save a configuration first</option>';
+  historyConfigSelect.innerHTML = allOption + options;
+}
+
 function renderRuns() {
   if (!state.runs.length) {
-    runsBody.innerHTML = '<tr><td colspan="5" class="empty">No runs yet.</td></tr>';
+    runsBody.innerHTML = '<tr><td colspan="5" class="empty">No sessions yet.</td></tr>';
     return;
   }
   runsBody.innerHTML = state.runs.map((run) => `
     <tr data-id="${escapeHTML(run.request_id)}">
       <td><strong>${escapeHTML(run.request_id)}</strong></td>
       <td><span class="phase ${phaseClass(run.phase)}">${escapeHTML(run.phase)}</span></td>
-      <td>${escapeHTML(run.source_branch || "")}</td>
+      <td>${escapeHTML(run.config_name || run.config_id || "")}</td>
       <td>${formatTime(run.updated_at)}</td>
       <td><button class="secondary" data-view="${escapeHTML(run.request_id)}" type="button">Open</button></td>
     </tr>
@@ -79,17 +110,16 @@ function renderRuns() {
 }
 
 function renderDetail(run) {
-  state.selectedID = run.request_id;
+  state.selectedRunID = run.request_id;
   stopRun.disabled = isTerminal(run.phase);
   refreshLogs.disabled = false;
   runDetail.innerHTML = `
     ${detail("Request ID", run.request_id)}
     ${detail("Phase", run.phase)}
+    ${detail("Configuration", run.config_name || run.config_id)}
     ${detail("Repository", run.repo_url, true)}
     ${detail("Branch", run.source_branch)}
-    ${detail("Work directory", run.work_directory)}
-    ${detail("Harness", run.harness_name)}
-    ${detail("Sandbox size", run.sandbox_size)}
+    ${detail("Linear issue", run.linear_issue_key || "None")}
     ${detail("Job", run.job_name || "Pending")}
     ${detail("Logs command", run.logs_command || "Pending", true)}
     ${detail("Message", run.message || "No message", true)}
@@ -105,39 +135,61 @@ function detail(label, value, wide = false) {
 }
 
 async function loadLogs() {
-  if (!state.selectedID) {
+  if (!state.selectedRunID) {
     return;
   }
-  const data = await api(`/runs/${encodeURIComponent(state.selectedID)}/logs?tail=240`);
+  const data = await api(`/runs/${encodeURIComponent(state.selectedRunID)}/logs?tail=400`);
   logs.textContent = data.logs || "No logs yet.";
 }
 
-form.addEventListener("submit", async (event) => {
+configForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const data = Object.fromEntries(new FormData(form).entries());
-  data.create_mr = form.create_mr.checked;
-  data.push_changes = form.push_changes.checked;
+  const data = Object.fromEntries(new FormData(configForm).entries());
+  data.create_mr = configForm.create_mr.checked;
+  data.push_changes = configForm.push_changes.checked;
+  data.source_branch = data.source_branch || "main";
   data.work_directory = data.work_directory || ".";
   data.harness_name = data.harness_name || "default";
   data.sandbox_size = data.sandbox_size || "large";
-  data.request_id = data.request_id || requestID(data.repo_url, data.source_branch);
 
-  formMessage.textContent = "Submitting run...";
+  configMessage.textContent = "Saving configuration...";
   try {
-    const run = await api("/runs", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-    formMessage.textContent = `Submitted ${run.request_id}`;
-    state.selectedID = run.request_id;
+    const cfg = await api("/configs", { method: "POST", body: JSON.stringify(data) });
+    configMessage.textContent = `Saved ${cfg.name}`;
+    configForm.reset();
+    configForm.source_branch.value = "main";
+    configForm.work_directory.value = ".";
+    configForm.harness_name.value = "default";
+    configForm.sandbox_size.value = "large";
+    await loadConfigs();
+  } catch (error) {
+    configMessage.textContent = error.message;
+  }
+});
+
+sessionForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const data = Object.fromEntries(new FormData(sessionForm).entries());
+  if (!data.config_id) {
+    sessionMessage.textContent = "Save and select a configuration first.";
+    return;
+  }
+  sessionMessage.textContent = "Starting session...";
+  try {
+    const run = await api("/runs", { method: "POST", body: JSON.stringify(data) });
+    sessionMessage.textContent = `Started ${run.request_id}`;
+    state.selectedRunID = run.request_id;
+    switchView("history");
+    historyConfigSelect.value = run.config_id;
     await loadRuns();
   } catch (error) {
-    formMessage.textContent = error.message;
+    sessionMessage.textContent = error.message;
   }
 });
 
 runsBody.addEventListener("click", async (event) => {
-  const id = event.target.closest("[data-id]")?.dataset.id || event.target.dataset.view;
+  const row = event.target.closest("[data-id]");
+  const id = row?.dataset.id || event.target.dataset.view;
   if (!id) {
     return;
   }
@@ -145,29 +197,51 @@ runsBody.addEventListener("click", async (event) => {
   renderDetail(run);
 });
 
-refreshRuns.addEventListener("click", () => {
-  loadRuns().catch((error) => {
-    formMessage.textContent = error.message;
-  });
+document.querySelectorAll(".menu-item").forEach((button) => {
+  button.addEventListener("click", () => switchView(button.dataset.view));
 });
 
-refreshLogs.addEventListener("click", () => {
-  loadLogs().catch((error) => {
-    logs.textContent = error.message;
-  });
-});
+refreshConfigs.addEventListener("click", () => loadConfigs().catch(showConfigError));
+refreshHistory.addEventListener("click", () => loadRuns().catch(showSessionError));
+historyConfigSelect.addEventListener("change", () => loadRuns().catch(showSessionError));
+refreshLogs.addEventListener("click", () => loadLogs().catch((error) => { logs.textContent = error.message; }));
 
 stopRun.addEventListener("click", async () => {
-  if (!state.selectedID) {
+  if (!state.selectedRunID) {
     return;
   }
-  const run = await api(`/runs/${encodeURIComponent(state.selectedID)}/stop`, {
-    method: "POST",
-    body: "{}",
-  });
+  const run = await api(`/runs/${encodeURIComponent(state.selectedRunID)}/stop`, { method: "POST", body: "{}" });
   renderDetail(run);
   await loadRuns();
 });
+
+function switchView(view) {
+  document.querySelectorAll(".menu-item").forEach((button) => {
+    button.classList.toggle("active", button.dataset.view === view);
+  });
+  document.querySelectorAll(".view").forEach((section) => {
+    section.classList.toggle("active", section.id === `${view}View`);
+  });
+  if (view === "history") {
+    loadRuns().catch(showSessionError);
+  }
+}
+
+function showConfigError(error) {
+  configMessage.textContent = error.message;
+}
+
+function showSessionError(error) {
+  sessionMessage.textContent = error.message;
+}
+
+function phaseClass(phase) {
+  return String(phase || "").toLowerCase();
+}
+
+function isTerminal(phase) {
+  return ["SUCCEEDED", "FAILED", "CANCELLED"].includes(phase);
+}
 
 function escapeHTML(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => ({
@@ -193,6 +267,9 @@ function formatTime(value) {
 }
 
 checkHealth();
-loadRuns().catch(() => {});
-setInterval(loadRuns, 5000);
-
+loadConfigs().then(loadRuns).catch(() => {});
+setInterval(() => {
+  if (document.querySelector("#historyView").classList.contains("active")) {
+    loadRuns().catch(() => {});
+  }
+}, 5000);

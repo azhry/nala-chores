@@ -29,6 +29,7 @@ cd /workspace/repo
 load_harness_config
 run_init_script
 prepare_opencode_config
+load_linear_issue_context
 
 cd "/workspace/repo/${WORK_DIR}"
 
@@ -106,4 +107,3 @@ if [[ "${CREATE_MR}" == "true" ]]; then
 fi
 
 write_result succeeded "run completed" "${EDIT_SESSION_ID}" "${MR_URL}"
-

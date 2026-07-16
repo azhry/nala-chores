@@ -7,18 +7,18 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: nala-chores
+      app.kubernetes.io/name: opencode-agent-runner
       app.kubernetes.io/component: manager
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: nala-chores
+        app.kubernetes.io/name: opencode-agent-runner
         app.kubernetes.io/component: manager
     spec:
       serviceAccountName: runner-manager
       containers:
         - name: manager
-          image: opencode-runner-manager:ui
+          image: opencode-runner-manager:config-ui
           imagePullPolicy: IfNotPresent
           env:
             - name: RUNNER_MANAGER_ADDR
@@ -31,6 +31,8 @@ spec:
               value: runner-secrets
             - name: RUNNER_APPLY_JOBS
               value: "true"
+            - name: RUNNER_STATE_PATH
+              value: /data/state.json
           ports:
             - name: http
               containerPort: 8080
@@ -40,6 +42,25 @@ spec:
               port: http
             initialDelaySeconds: 2
             periodSeconds: 5
+          volumeMounts:
+            - name: state
+              mountPath: /data
+      volumes:
+        - name: state
+          persistentVolumeClaim:
+            claimName: runner-manager-state
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: runner-manager-state
+  namespace: agent-runner
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
 ---
 apiVersion: v1
 kind: Service
@@ -49,7 +70,7 @@ metadata:
 spec:
   type: NodePort
   selector:
-    app.kubernetes.io/name: nala-chores
+    app.kubernetes.io/name: opencode-agent-runner
     app.kubernetes.io/component: manager
   ports:
     - name: http

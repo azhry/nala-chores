@@ -7,7 +7,7 @@ import (
 )
 
 func TestCreateIsIdempotent(t *testing.T) {
-	s := NewMemory()
+	s := NewMemory("")
 	req := runner.RunRequest{
 		RequestID:    "same",
 		RepoURL:      "https://example.com/repo.git",
@@ -15,15 +15,45 @@ func TestCreateIsIdempotent(t *testing.T) {
 		Prompt:       "do work",
 	}
 
-	first, created := s.Create(req)
+	first, created, err := s.Create(req)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !created {
 		t.Fatal("first create should create a run")
 	}
-	second, created := s.Create(req)
+	second, created, err := s.Create(req)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if created {
 		t.Fatal("second create should be idempotent")
 	}
 	if first.CreatedAt != second.CreatedAt || second.RequestID != "same" {
 		t.Fatalf("unexpected idempotent run: %#v", second)
+	}
+}
+
+func TestSaveConfigMasksSecrets(t *testing.T) {
+	s := NewMemory("")
+	cfg, err := s.SaveConfig(runner.ConfigurationInput{
+		Name:           "Demo",
+		RepoURL:        "https://github.com/example/repo.git",
+		GitHubToken:    "gh",
+		OpenCodeAPIKey: "oc",
+		LinearAPIKey:   "lin",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cfg.HasGitHubToken || !cfg.HasOpenCodeAPIKey || !cfg.HasLinearAPIKey {
+		t.Fatalf("expected secret presence flags, got %#v", cfg)
+	}
+	secret, err := s.GetConfigSecret(cfg.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if secret.GitHubToken != "gh" || secret.OpenCodeAPIKey != "oc" || secret.LinearAPIKey != "lin" {
+		t.Fatalf("unexpected secrets: %#v", secret)
 	}
 }

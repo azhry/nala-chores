@@ -102,3 +102,31 @@ prepare_opencode_config() {
     log "opencode.json not found; OpenCode will use defaults"
   fi
 }
+
+load_linear_issue_context() {
+  if [[ -z "${LINEAR_API_KEY:-}" || -z "${LINEAR_ISSUE_KEY:-}" ]]; then
+    return
+  fi
+
+  log "loading Linear issue context for ${LINEAR_ISSUE_KEY}"
+  local payload
+  payload="$(jq -n --arg key "${LINEAR_ISSUE_KEY}" '{
+    query: "query Issue($key: String!) { issue(id: $key) { identifier title description url state { name } assignee { name } labels { nodes { name } } } }",
+    variables: { key: $key }
+  }')"
+
+  ISSUE_CONTEXT="$(curl -fsS https://api.linear.app/graphql \
+    -H "Authorization: ${LINEAR_API_KEY}" \
+    -H "Content-Type: application/json" \
+    --data "${payload}" | jq -r '
+      .data.issue as $i |
+      if $i == null then empty else
+        "Linear: " + $i.identifier + "\n" +
+        "Title: " + $i.title + "\n" +
+        "State: " + ($i.state.name // "") + "\n" +
+        "Assignee: " + ($i.assignee.name // "Unassigned") + "\n" +
+        "URL: " + $i.url + "\n\n" +
+        ($i.description // "")
+      end
+    ' || true)"
+}

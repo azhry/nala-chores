@@ -1,11 +1,11 @@
 # Nala Chores
 
-Local Minikube MVP for running OpenCode headless in an ephemeral Kubernetes Job.
+Local Minikube MVP for running OpenCode headless in an ephemeral Kubernetes Job, with saved GitHub, Linear, and OpenCode configurations.
 
 ## Components
 
 - `cmd/runner-cli`: submit tasks and poll status.
-- `cmd/runner-manager`: HTTP API that creates and watches sandbox Jobs.
+- `cmd/runner-manager`: HTTP API and web UI that stores configurations, creates Jobs, and keeps run history/logs.
 - `images/backend`: sandbox image that clones the repo and runs OpenCode phases.
 - `deploy/minikube`: namespace, RBAC, and manager deployment manifests.
 - `examples`: sample `.opencode-runner.yml` and OpenCode agents/commands.
@@ -46,7 +46,7 @@ kubectl apply -f deploy/minikube/namespace.yaml
 kubectl apply -f deploy/minikube/rbac.yaml
 ```
 
-Create secrets:
+Create fallback secrets:
 
 ```bash
 kubectl -n agent-runner create secret generic runner-secrets \
@@ -55,6 +55,8 @@ kubectl -n agent-runner create secret generic runner-secrets \
   --from-literal=anthropic_api_key="$ANTHROPIC_API_KEY" \
   --from-literal=openai_api_key="$OPENAI_API_KEY"
 ```
+
+The web UI can also store per-configuration GitHub, Linear, and OpenCode keys. Config-backed runs create a per-run Kubernetes Secret automatically.
 
 Build and load images:
 
@@ -88,3 +90,9 @@ kubectl -n agent-runner port-forward svc/runner-manager 8080:8080
 Copy `examples/.opencode-runner.yml` and `examples/sample-repo-harness/.opencode` into the target repository, then customize commands and agents for that repo.
 
 The sample harness defaults to OpenCode's free `opencode/big-pickle` model.
+
+## Web UI Flow
+
+1. Open **Configurations** and save a configuration with repo URL, branch, GitHub API key, Linear API key, and OpenCode API key.
+2. Open **Run Session**, select a configuration, enter a prompt, optionally add a Linear issue key, and run it.
+3. Open **History** to inspect sessions for each configuration and view stored logs.

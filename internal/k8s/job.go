@@ -146,6 +146,8 @@ spec:
               value: {{ .Run.PushChanges | printf "%t" | printf "%q" }}
             - name: ISSUE_KEY
               value: {{ .Run.IssueKey | printf "%q" }}
+            - name: LINEAR_ISSUE_KEY
+              value: {{ .Run.LinearIssueKey | printf "%q" }}
             - name: OPENCODE_DISABLE_AUTOUPDATE
               value: "1"
             - name: OPENCODE_EXPERIMENTAL_BASH_DEFAULT_TIMEOUT_MS
@@ -173,6 +175,12 @@ spec:
                 secretKeyRef:
                   name: {{ .Secret }}
                   key: opencode_api_key
+                  optional: true
+            - name: LINEAR_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Secret }}
+                  key: linear_api_key
                   optional: true
           resources:
             requests:
