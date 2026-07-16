@@ -56,7 +56,7 @@ kubectl -n agent-runner create secret generic runner-secrets \
   --from-literal=openai_api_key="$OPENAI_API_KEY"
 ```
 
-The web UI can also store per-configuration GitHub, Linear, and OpenCode keys. Config-backed runs create a per-run Kubernetes Secret automatically.
+The web UI can also store per-configuration GitHub, Linear, and OpenCode keys. Each configuration syncs one stable Kubernetes Secret, and all runs for that configuration reuse it.
 
 Build and load images:
 

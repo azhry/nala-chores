@@ -95,6 +95,12 @@ func (s *Server) saveConfig(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	if s.cfg.ApplyJobs {
+		if err := s.syncConfigSecret(cfg.ID); err != nil {
+			writeError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
 	writeJSON(w, http.StatusOK, cfg)
 }
 
@@ -245,11 +251,7 @@ func (s *Server) provision(id string) {
 
 	secretName := s.cfg.SecretName
 	if run.ConfigID != "" {
-		secretName = "runner-secret-" + run.JobName
-		if err := s.applyRunSecret(run, secretName); err != nil {
-			s.fail(id, err)
-			return
-		}
+		secretName = configSecretName(run.ConfigID)
 	}
 
 	manifest, err := k8s.RenderJob(run, k8s.JobOptions{
@@ -368,11 +370,12 @@ func (s *Server) jobPhase(jobName string) (runner.Phase, string, bool) {
 	return runner.PhaseProvisioning, "waiting for sandbox pod", false
 }
 
-func (s *Server) applyRunSecret(run runner.Run, secretName string) error {
-	secret, err := s.store.GetConfigSecret(run.ConfigID)
+func (s *Server) syncConfigSecret(configID string) error {
+	secret, err := s.store.GetConfigSecret(configID)
 	if err != nil {
 		return err
 	}
+	secretName := configSecretName(configID)
 	data := map[string]string{}
 	if secret.GitHubToken != "" {
 		data["git_token"] = secret.GitHubToken
@@ -405,9 +408,30 @@ func (s *Server) applyRunSecret(run runner.Run, secretName string) error {
 	cmd.Stdin = bytes.NewReader(body)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("kubectl apply run secret failed: %w: %s", err, strings.TrimSpace(string(out)))
+		return fmt.Errorf("kubectl apply config secret failed: %w: %s", err, strings.TrimSpace(string(out)))
 	}
 	return nil
+}
+
+func configSecretName(configID string) string {
+	clean := strings.ToLower(configID)
+	var b strings.Builder
+	for _, r := range clean {
+		switch {
+		case r >= 'a' && r <= 'z', r >= '0' && r <= '9':
+			b.WriteRune(r)
+		default:
+			b.WriteByte('-')
+		}
+	}
+	name := strings.Trim(b.String(), "-")
+	if name == "" {
+		name = "default"
+	}
+	if len(name) > 45 {
+		name = strings.TrimRight(name[:45], "-")
+	}
+	return "runner-config-" + name
 }
 
 func encodeSecretData(values map[string]string) map[string]string {
