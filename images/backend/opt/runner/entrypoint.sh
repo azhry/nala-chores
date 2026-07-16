@@ -51,8 +51,14 @@ ${ISSUE_CONTEXT}}"
 fi
 
 EDIT_PROMPT="${PROMPT}"
+if [[ -n "${ISSUE_CONTEXT}" ]]; then
+  EDIT_PROMPT="${EDIT_PROMPT}
+
+## Linear Issue
+${ISSUE_CONTEXT}"
+fi
 if [[ -n "${PLAN_TEXT}" ]]; then
-  EDIT_PROMPT="${PROMPT}
+  EDIT_PROMPT="${EDIT_PROMPT}
 
 ## Plan
 ${PLAN_TEXT}"

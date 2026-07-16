@@ -129,4 +129,10 @@ load_linear_issue_context() {
         ($i.description // "")
       end
     ' || true)"
+
+  if [[ -z "${ISSUE_CONTEXT}" ]]; then
+    log "Linear issue context not found for ${LINEAR_ISSUE_KEY}; continuing without ticket details"
+  else
+    log "loaded Linear issue context for ${LINEAR_ISSUE_KEY}"
+  fi
 }
