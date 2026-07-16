@@ -147,6 +147,7 @@ configForm.addEventListener("submit", async (event) => {
   const data = Object.fromEntries(new FormData(configForm).entries());
   data.create_mr = configForm.create_mr.checked;
   data.push_changes = configForm.push_changes.checked;
+  data.clear_opencode_api_key = configForm.clear_opencode_api_key.checked;
   data.source_branch = data.source_branch || "main";
   data.work_directory = data.work_directory || ".";
   data.harness_name = data.harness_name || "default";

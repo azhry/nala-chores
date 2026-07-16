@@ -88,6 +88,15 @@ func (s *Memory) SaveConfig(input runner.ConfigurationInput) (runner.Configurati
 	if input.LinearAPIKey != "" {
 		secret.LinearAPIKey = input.LinearAPIKey
 	}
+	if input.ClearGitHubToken {
+		secret.GitHubToken = ""
+	}
+	if input.ClearOpenCodeAPIKey {
+		secret.OpenCodeAPIKey = ""
+	}
+	if input.ClearLinearAPIKey {
+		secret.LinearAPIKey = ""
+	}
 	secret.Public.HasGitHubToken = secret.GitHubToken != ""
 	secret.Public.HasOpenCodeAPIKey = secret.OpenCodeAPIKey != ""
 	secret.Public.HasLinearAPIKey = secret.LinearAPIKey != ""

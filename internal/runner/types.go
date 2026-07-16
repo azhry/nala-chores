@@ -68,19 +68,22 @@ type RunList struct {
 }
 
 type ConfigurationInput struct {
-	ID             string `json:"id"`
-	Name           string `json:"name"`
-	RepoURL        string `json:"repo_url"`
-	SourceBranch   string `json:"source_branch"`
-	WorkDirectory  string `json:"work_directory"`
-	HarnessName    string `json:"harness_name"`
-	SandboxSize    string `json:"sandbox_size"`
-	ConfigPath     string `json:"config_path"`
-	CreateMR       bool   `json:"create_mr"`
-	PushChanges    bool   `json:"push_changes"`
-	GitHubToken    string `json:"github_token"`
-	OpenCodeAPIKey string `json:"opencode_api_key"`
-	LinearAPIKey   string `json:"linear_api_key"`
+	ID                  string `json:"id"`
+	Name                string `json:"name"`
+	RepoURL             string `json:"repo_url"`
+	SourceBranch        string `json:"source_branch"`
+	WorkDirectory       string `json:"work_directory"`
+	HarnessName         string `json:"harness_name"`
+	SandboxSize         string `json:"sandbox_size"`
+	ConfigPath          string `json:"config_path"`
+	CreateMR            bool   `json:"create_mr"`
+	PushChanges         bool   `json:"push_changes"`
+	GitHubToken         string `json:"github_token"`
+	OpenCodeAPIKey      string `json:"opencode_api_key"`
+	LinearAPIKey        string `json:"linear_api_key"`
+	ClearGitHubToken    bool   `json:"clear_github_token"`
+	ClearOpenCodeAPIKey bool   `json:"clear_opencode_api_key"`
+	ClearLinearAPIKey   bool   `json:"clear_linear_api_key"`
 }
 
 type Configuration struct {
