@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nala Chores</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>Nala Chores</h1>
+        <p>Submit remote agent runs into your Minikube sandbox.</p>
+      </div>
+      <div class="status-pill" id="apiStatus">Checking API</div>
+    </header>
+
+    <main class="layout">
+      <section class="panel submit-panel">
+        <div class="panel-header">
+          <h2>New Run</h2>
+          <span>Model default: opencode/big-pickle</span>
+        </div>
+        <form id="runForm">
+          <label>
+            Repository URL
+            <input name="repo_url" required placeholder="https://github.com/org/repo.git" autocomplete="off" />
+          </label>
+          <div class="field-grid">
+            <label>
+              Branch
+              <input name="source_branch" required placeholder="feature/my-change" autocomplete="off" />
+            </label>
+            <label>
+              Work directory
+              <input name="work_directory" value="." autocomplete="off" />
+            </label>
+          </div>
+          <label>
+            Prompt
+            <textarea name="prompt" required rows="7" placeholder="Implement the requested change and update tests."></textarea>
+          </label>
+          <div class="field-grid">
+            <label>
+              Request ID
+              <input name="request_id" placeholder="auto-generated" autocomplete="off" />
+            </label>
+            <label>
+              Issue key
+              <input name="issue_key" placeholder="JIRA-123" autocomplete="off" />
+            </label>
+          </div>
+          <div class="field-grid">
+            <label>
+              Harness
+              <input name="harness_name" value="default" autocomplete="off" />
+            </label>
+            <label>
+              Sandbox size
+              <select name="sandbox_size">
+                <option value="large">large</option>
+                <option value="xlarge">xlarge</option>
+                <option value="small">small</option>
+                <option value="2xlarge">2xlarge</option>
+              </select>
+            </label>
+          </div>
+          <div class="toggles">
+            <label class="check">
+              <input type="checkbox" name="push_changes" />
+              <span>Push changes</span>
+            </label>
+            <label class="check">
+              <input type="checkbox" name="create_mr" />
+              <span>Create MR</span>
+            </label>
+          </div>
+          <button class="primary" type="submit">Submit Run</button>
+          <p class="form-message" id="formMessage"></p>
+        </form>
+      </section>
+
+      <section class="panel runs-panel">
+        <div class="panel-header">
+          <h2>Runs</h2>
+          <button id="refreshRuns" class="secondary" type="button">Refresh</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Request</th>
+                <th>Phase</th>
+                <th>Branch</th>
+                <th>Updated</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="runsBody">
+              <tr><td colspan="5" class="empty">No runs yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel detail-panel">
+        <div class="panel-header">
+          <h2>Run Detail</h2>
+          <button id="stopRun" class="danger" type="button" disabled>Stop</button>
+        </div>
+        <div class="detail-grid" id="runDetail">
+          <div class="empty">Select a run to inspect it.</div>
+        </div>
+      </section>
+
+      <section class="panel logs-panel">
+        <div class="panel-header">
+          <h2>Logs</h2>
+          <button id="refreshLogs" class="secondary" type="button" disabled>Refresh Logs</button>
+        </div>
+        <pre id="logs">No run selected.</pre>
+      </section>
+    </main>
+
+    <script src="/app.js" defer></script>
+  </body>
+</html>

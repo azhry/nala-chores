@@ -1,0 +1,30 @@
+# OS/editor noise
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.tmp
+
+# Go build/test output
+/bin/
+/dist/
+*.test
+coverage.out
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.kubeconfig
+
+# Local logs and generated artifacts
+*.log
+/tmp/
+/artifacts/
+
+# Docker/build cache leftovers
+*.tar
+*.tgz
+

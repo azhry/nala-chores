@@ -1,0 +1,28 @@
+sandbox:
+  image:
+    repository: opencode-runner-backend
+    tag: local
+  size: xlarge
+  initScript: ""
+
+agent:
+  model: opencode/big-pickle
+  mode: run
+  agents:
+    plan: plan-agent
+    edit: edit-agent
+    verify: verify-agent
+  mcp: {}
+
+harnesses:
+  default:
+    planCommand: plan-and-scope
+    verifyCommand: verify-backend
+    maxFixAttempts: 3
+    sessionTimeout: 2h
+
+mergeRequest:
+  draft: true
+  labels: ["agent-generated", "needs-review"]
+  titleTemplate: "feat: {{ .IssueKey }}"
+  commitTemplate: "[{{ .IssueKey }}] [ai-assisted] {{ .RequestID }}"
