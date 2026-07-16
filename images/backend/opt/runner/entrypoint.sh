@@ -104,10 +104,14 @@ MR_URL=""
 if [[ "${PUSH_CHANGES}" == "true" || "${CREATE_MR}" == "true" ]]; then
   log "committing changes"
   commit_changes
-  push_changes
+  if [[ "${CHANGES_COMMITTED}" == "true" ]]; then
+    push_changes
+  else
+    log "skipping push because no changes were committed"
+  fi
 fi
 
-if [[ "${CREATE_MR}" == "true" ]]; then
+if [[ "${CREATE_MR}" == "true" && "${CHANGES_PUSHED}" == "true" ]]; then
   log "creating merge request"
   MR_URL="$(create_merge_request || true)"
 fi
