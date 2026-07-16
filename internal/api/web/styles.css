@@ -395,14 +395,91 @@ tr[data-id]:hover {
   grid-column: 1 / -1;
 }
 
-pre {
-  min-height: 260px;
-  max-height: 460px;
-  margin: 0;
+.chat-log {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-height: 320px;
+  max-height: 560px;
   overflow: auto;
   padding: 16px;
-  background: #161914;
-  color: #e5f1e8;
+  background: #f5f7f4;
+}
+
+.chat-message {
+  display: grid;
+  gap: 5px;
+  max-width: min(860px, 92%);
+}
+
+.chat-message.agent {
+  justify-self: end;
+}
+
+.chat-message.system,
+.chat-message.event {
+  justify-self: center;
+  max-width: min(720px, 96%);
+}
+
+.chat-message.error,
+.chat-message.tool,
+.chat-message.log {
+  justify-self: start;
+}
+
+.chat-meta {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.chat-message.agent .chat-meta {
+  text-align: right;
+}
+
+.chat-message.system .chat-meta,
+.chat-message.event .chat-meta {
+  text-align: center;
+}
+
+.chat-bubble {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  padding: 11px 13px;
+  color: var(--text);
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.chat-message.agent .chat-bubble {
+  border-color: #b8d9c4;
+  background: #e8f5ec;
+  color: var(--green-dark);
+}
+
+.chat-message.system .chat-bubble,
+.chat-message.event .chat-bubble {
+  background: #eef2ee;
+  color: #4b554d;
+  font-size: 12px;
+  text-align: center;
+}
+
+.chat-message.error .chat-bubble {
+  border-color: #ecc5bf;
+  background: #fff0ed;
+  color: var(--red);
+}
+
+.chat-message.tool .chat-bubble,
+.chat-message.log .chat-bubble {
+  background: #fbfcfa;
+}
+
+.chat-bubble.mono {
+  white-space: normal;
   font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 

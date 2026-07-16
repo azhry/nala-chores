@@ -18,7 +18,7 @@ spec:
       serviceAccountName: runner-manager
       containers:
         - name: manager
-          image: opencode-runner-manager:config-secret
+          image: opencode-runner-manager:chat-ui
           imagePullPolicy: IfNotPresent
           env:
             - name: RUNNER_MANAGER_ADDR

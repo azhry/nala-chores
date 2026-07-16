@@ -126,7 +126,7 @@ function renderDetail(run) {
     ${detail("Prompt", run.prompt || "", true)}
   `;
   loadLogs().catch((error) => {
-    logs.textContent = error.message;
+    renderLogError(error.message);
   });
 }
 
@@ -139,7 +139,7 @@ async function loadLogs() {
     return;
   }
   const data = await api(`/runs/${encodeURIComponent(state.selectedRunID)}/logs?tail=400`);
-  logs.textContent = data.logs || "No logs yet.";
+  renderChatLogs(data.logs || "");
 }
 
 configForm.addEventListener("submit", async (event) => {
@@ -205,7 +205,7 @@ document.querySelectorAll(".menu-item").forEach((button) => {
 refreshConfigs.addEventListener("click", () => loadConfigs().catch(showConfigError));
 refreshHistory.addEventListener("click", () => loadRuns().catch(showSessionError));
 historyConfigSelect.addEventListener("change", () => loadRuns().catch(showSessionError));
-refreshLogs.addEventListener("click", () => loadLogs().catch((error) => { logs.textContent = error.message; }));
+refreshLogs.addEventListener("click", () => loadLogs().catch((error) => { renderLogError(error.message); }));
 
 stopRun.addEventListener("click", async () => {
   if (!state.selectedRunID) {
@@ -242,6 +242,197 @@ function phaseClass(phase) {
 
 function isTerminal(phase) {
   return ["SUCCEEDED", "FAILED", "CANCELLED"].includes(phase);
+}
+
+function renderChatLogs(raw) {
+  const entries = parseLogEntries(raw);
+  if (!entries.length) {
+    logs.innerHTML = '<div class="empty">No logs yet.</div>';
+    return;
+  }
+  logs.innerHTML = entries.map(renderChatEntry).join("");
+  logs.scrollTop = logs.scrollHeight;
+}
+
+function renderLogError(message) {
+  logs.innerHTML = renderChatEntry({
+    kind: "error",
+    title: "Could not load logs",
+    body: message,
+  });
+}
+
+function parseLogEntries(raw) {
+  const entries = [];
+  const lines = String(raw || "").split(/\r?\n/);
+  let jsonBlock = [];
+
+  for (const line of lines) {
+    if (!line.trim()) {
+      continue;
+    }
+
+    if (jsonBlock.length || (line.trim() === "{" && !tryParseJSON(line))) {
+      jsonBlock.push(line);
+      const block = jsonBlock.join("\n");
+      const parsed = tryParseJSON(block);
+      if (parsed) {
+        entries.push(entryFromFinalJSON(parsed));
+        jsonBlock = [];
+      }
+      continue;
+    }
+
+    const parsed = tryParseJSON(line);
+    if (parsed) {
+      entries.push(entryFromJSON(parsed));
+      continue;
+    }
+
+    entries.push(entryFromLine(line));
+  }
+
+  if (jsonBlock.length) {
+    entries.push({
+      kind: "log",
+      title: "Raw output",
+      body: jsonBlock.join("\n"),
+      mono: true,
+    });
+  }
+
+  return entries.filter(Boolean);
+}
+
+function entryFromJSON(event) {
+  const part = event.part || {};
+  if (event.type === "text" && part.text) {
+    return {
+      kind: "agent",
+      title: "OpenCode",
+      body: part.text.trim(),
+      time: formatEventTime(event.timestamp),
+    };
+  }
+
+  if (event.type === "tool_use") {
+    const state = part.state || {};
+    const input = state.input || {};
+    const output = state.output || state.metadata?.output || "";
+    const command = input.command || state.title || part.tool || "tool";
+    return {
+      kind: state.status === "error" ? "error" : "tool",
+      title: `${part.tool || "Tool"} · ${state.status || "used"}`,
+      body: [command, output].filter(Boolean).join("\n\n"),
+      time: formatEventTime(event.timestamp),
+      mono: true,
+    };
+  }
+
+  if (event.type === "error") {
+    const error = event.error || {};
+    const data = error.data || {};
+    return {
+      kind: "error",
+      title: error.name || "Error",
+      body: data.message || error.message || data.responseBody || JSON.stringify(error, null, 2),
+      time: formatEventTime(event.timestamp),
+    };
+  }
+
+  if (event.type === "step_start") {
+    return {
+      kind: "event",
+      title: "Agent step started",
+      body: event.sessionID || "",
+      time: formatEventTime(event.timestamp),
+    };
+  }
+
+  if (event.type === "step_finish") {
+    const tokens = part.tokens?.total ? `${part.tokens.total} tokens` : "";
+    const reason = part.reason ? `Finished: ${part.reason}` : "Step finished";
+    return {
+      kind: "event",
+      title: reason,
+      body: tokens,
+      time: formatEventTime(event.timestamp),
+    };
+  }
+
+  return {
+    kind: "event",
+    title: event.type || "Event",
+    body: JSON.stringify(event, null, 2),
+    time: formatEventTime(event.timestamp),
+    mono: true,
+  };
+}
+
+function entryFromFinalJSON(result) {
+  return {
+    kind: result.status === "failed" ? "error" : "event",
+    title: `Run ${result.status || "result"}`,
+    body: [
+      result.message,
+      result.mr_url ? `MR: ${result.mr_url}` : "",
+      result.completed_at ? `Completed: ${result.completed_at}` : "",
+    ].filter(Boolean).join("\n"),
+  };
+}
+
+function entryFromLine(line) {
+  const match = line.match(/^\[([^\]]+)\]\s*(.*)$/);
+  if (match) {
+    return {
+      kind: "system",
+      title: match[1],
+      body: stripANSI(match[2]),
+    };
+  }
+  const clean = stripANSI(line);
+  const isFailure = /fatal:|error|failed|invalid username or token/i.test(clean);
+  return {
+    kind: isFailure ? "error" : "log",
+    title: isFailure ? "Error output" : "Log",
+    body: clean,
+    mono: !isFailure,
+  };
+}
+
+function renderChatEntry(entry) {
+  const classes = ["chat-message", entry.kind || "log"];
+  const bodyClass = entry.mono ? "chat-bubble mono" : "chat-bubble";
+  const meta = [entry.title, entry.time].filter(Boolean).map(escapeHTML).join(" · ");
+  return `
+    <article class="${classes.map(escapeHTML).join(" ")}">
+      <div class="chat-meta">${meta}</div>
+      <div class="${bodyClass}">${formatChatBody(entry.body)}</div>
+    </article>
+  `;
+}
+
+function formatChatBody(value) {
+  return escapeHTML(value || "").replace(/\n/g, "<br>");
+}
+
+function tryParseJSON(value) {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+function stripANSI(value) {
+  return String(value || "").replace(/\u001b\[[0-9;]*m/g, "");
+}
+
+function formatEventTime(value) {
+  if (!value) {
+    return "";
+  }
+  return formatTime(typeof value === "number" ? value : Number(value));
 }
 
 function escapeHTML(value) {
