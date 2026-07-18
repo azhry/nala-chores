@@ -97,6 +97,15 @@ run_init_script() {
   bash "${INIT_SCRIPT}"
 }
 
+clone_harness_repo() {
+  if [[ -z "${HARNESS_REPO_URL:-}" ]]; then
+    return
+  fi
+
+  log "cloning harness repository"
+  git clone --depth 1 "${HARNESS_REPO_URL}" /workspace/my-harnesses
+}
+
 prepare_opencode_config() {
   if [[ ! -f opencode.json ]]; then
     log "opencode.json not found; OpenCode will use defaults"

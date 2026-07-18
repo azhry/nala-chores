@@ -74,6 +74,7 @@ function renderConfigs() {
       <div>
         <h3>${escapeHTML(cfg.name)}</h3>
         <p>${escapeHTML(cfg.repo_url)}</p>
+        ${cfg.harness_repo_url ? `<p>${escapeHTML(cfg.harness_repo_url)}</p>` : ""}
       </div>
       <div class="config-meta">
         <span>${escapeHTML(cfg.source_branch)}</span>
@@ -118,6 +119,7 @@ function renderDetail(run) {
     ${detail("Phase", run.phase)}
     ${detail("Configuration", run.config_name || run.config_id)}
     ${detail("Repository", run.repo_url, true)}
+    ${detail("Harness repository", run.harness_repo_url || "None", true)}
     ${detail("Branch", run.source_branch)}
     ${detail("Linear issue", run.linear_issue_key || "None")}
     ${detail("Job", run.job_name || "Pending")}

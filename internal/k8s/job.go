@@ -134,6 +134,8 @@ spec:
               value: {{ .Run.Prompt | printf "%q" }}
             - name: WORK_DIR
               value: {{ .Run.WorkDirectory | printf "%q" }}
+            - name: HARNESS_REPO_URL
+              value: {{ .Run.HarnessRepoURL | printf "%q" }}
             - name: HARNESS_NAME
               value: {{ .Run.HarnessName | printf "%q" }}
             - name: SANDBOX_SIZE

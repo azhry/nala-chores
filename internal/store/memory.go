@@ -70,6 +70,7 @@ func (s *Memory) SaveConfig(input runner.ConfigurationInput) (runner.Configurati
 	cfg.RepoURL = input.RepoURL
 	cfg.SourceBranch = defaultString(input.SourceBranch, "main")
 	cfg.WorkDirectory = defaultString(input.WorkDirectory, ".")
+	cfg.HarnessRepoURL = input.HarnessRepoURL
 	cfg.HarnessName = defaultString(input.HarnessName, "default")
 	cfg.SandboxSize = defaultString(input.SandboxSize, "large")
 	cfg.ConfigPath = input.ConfigPath
@@ -162,6 +163,7 @@ func (s *Memory) Create(req runner.RunRequest) (runner.Run, bool, error) {
 		SourceBranch:   req.SourceBranch,
 		Prompt:         req.Prompt,
 		WorkDirectory:  defaultString(req.WorkDirectory, "."),
+		HarnessRepoURL: req.HarnessRepoURL,
 		CreateMR:       req.CreateMR,
 		IssueKey:       req.IssueKey,
 		LinearIssueKey: req.LinearIssueKey,
@@ -183,6 +185,7 @@ func (s *Memory) Create(req runner.RunRequest) (runner.Run, bool, error) {
 		run.RepoURL = defaultString(run.RepoURL, cfg.Public.RepoURL)
 		run.SourceBranch = defaultString(run.SourceBranch, cfg.Public.SourceBranch)
 		run.WorkDirectory = defaultString(run.WorkDirectory, cfg.Public.WorkDirectory)
+		run.HarnessRepoURL = defaultString(run.HarnessRepoURL, cfg.Public.HarnessRepoURL)
 		run.HarnessName = defaultString(run.HarnessName, cfg.Public.HarnessName)
 		run.SandboxSize = defaultString(run.SandboxSize, cfg.Public.SandboxSize)
 		run.ConfigPath = defaultString(run.ConfigPath, cfg.Public.ConfigPath)

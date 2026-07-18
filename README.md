@@ -27,6 +27,7 @@ Submit from a git checkout:
 ```bash
 go run ./cmd/runner-cli submit \
   --prompt "Implement the requested change and update tests." \
+  --harness-repo https://github.com/your-org/my-harnesses.git \
   --workdir . \
   --no-mr
 ```
@@ -61,10 +62,10 @@ The web UI can also store per-configuration GitHub, Linear, and OpenCode keys. E
 Build and load images:
 
 ```bash
-docker build -t opencode-runner-backend:local images/backend
-docker build -t opencode-runner-manager:ui -f Dockerfile.manager .
-minikube image load opencode-runner-backend:local
-minikube image load opencode-runner-manager:ui
+docker build -t opencode-runner-backend:harness-repo images/backend
+docker build -t opencode-runner-manager:harness-repo -f Dockerfile.manager .
+minikube image load opencode-runner-backend:harness-repo
+minikube image load opencode-runner-manager:harness-repo
 ```
 
 Deploy manager:
@@ -91,8 +92,10 @@ Copy `examples/.opencode-runner.yml` and `examples/sample-repo-harness/.opencode
 
 The sample harness defaults to OpenCode's free `opencode/big-pickle` model.
 
+Configurations can also point at an external harness repository. When `harness_repo_url` is set, the worker clones that repository to `/workspace/my-harnesses` before running OpenCode, so target repo instructions can reference harness paths such as `../my-harnesses/agent-spec-ops`.
+
 ## Web UI Flow
 
-1. Open **Configurations** and save a configuration with repo URL, branch, GitHub API key, Linear API key, and OpenCode API key.
+1. Open **Configurations** and save a configuration with repo URL, optional harness repository URL, branch, GitHub API key, Linear API key, and OpenCode API key.
 2. Open **Run Session**, select a configuration, enter a prompt, optionally add a Linear issue key, and run it.
 3. Open **History** to inspect sessions for each configuration and view stored logs.

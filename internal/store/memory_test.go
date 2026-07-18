@@ -39,6 +39,7 @@ func TestSaveConfigMasksSecrets(t *testing.T) {
 	cfg, err := s.SaveConfig(runner.ConfigurationInput{
 		Name:           "Demo",
 		RepoURL:        "https://github.com/example/repo.git",
+		HarnessRepoURL: "https://github.com/example/harnesses.git",
 		GitHubToken:    "gh",
 		OpenCodeAPIKey: "oc",
 		LinearAPIKey:   "lin",
@@ -48,6 +49,9 @@ func TestSaveConfigMasksSecrets(t *testing.T) {
 	}
 	if !cfg.HasGitHubToken || !cfg.HasOpenCodeAPIKey || !cfg.HasLinearAPIKey {
 		t.Fatalf("expected secret presence flags, got %#v", cfg)
+	}
+	if cfg.HarnessRepoURL != "https://github.com/example/harnesses.git" {
+		t.Fatalf("expected harness repo URL to be stored, got %q", cfg.HarnessRepoURL)
 	}
 	secret, err := s.GetConfigSecret(cfg.ID)
 	if err != nil {

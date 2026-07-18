@@ -54,6 +54,7 @@ func submit(args []string) error {
 	prompt := fs.String("prompt", "", "task prompt")
 	promptFile := fs.String("prompt-file", "", "file containing task prompt")
 	workdir := fs.String("workdir", ".", "repo subdirectory for OpenCode")
+	harnessRepo := fs.String("harness-repo", "", "optional git URL for an external harness repository")
 	harness := fs.String("harness", "default", "harness name from .opencode-runner.yml")
 	size := fs.String("sandbox-size", "large", "sandbox size: small, large, xlarge, 2xlarge")
 	issue := fs.String("issue", "", "issue key to pass to the harness")
@@ -116,17 +117,18 @@ func submit(args []string) error {
 	}
 
 	req := runner.RunRequest{
-		RequestID:     *requestID,
-		RepoURL:       *repoURL,
-		SourceBranch:  *branch,
-		Prompt:        *prompt,
-		WorkDirectory: *workdir,
-		CreateMR:      *createMR,
-		IssueKey:      *issue,
-		HarnessName:   *harness,
-		SandboxSize:   *size,
-		ConfigPath:    *configPath,
-		PushChanges:   *pushChanges,
+		RequestID:      *requestID,
+		RepoURL:        *repoURL,
+		SourceBranch:   *branch,
+		Prompt:         *prompt,
+		WorkDirectory:  *workdir,
+		HarnessRepoURL: *harnessRepo,
+		CreateMR:       *createMR,
+		IssueKey:       *issue,
+		HarnessName:    *harness,
+		SandboxSize:    *size,
+		ConfigPath:     *configPath,
+		PushChanges:    *pushChanges,
 	}
 	var run runner.Run
 	if err := postJSON(*apiURL+"/runs", req, &run); err != nil {

@@ -16,13 +16,14 @@ func TestJobNameSanitizesRequestID(t *testing.T) {
 
 func TestRenderJobIncludesCoreEnvironment(t *testing.T) {
 	run := runner.Run{
-		RequestID:     "req-1",
-		RepoURL:       "https://github.com/example/repo.git",
-		SourceBranch:  "feature/demo",
-		Prompt:        "change it",
-		WorkDirectory: "go",
-		HarnessName:   "default",
-		SandboxSize:   "xlarge",
+		RequestID:      "req-1",
+		RepoURL:        "https://github.com/example/repo.git",
+		SourceBranch:   "feature/demo",
+		Prompt:         "change it",
+		WorkDirectory:  "go",
+		HarnessRepoURL: "https://github.com/example/harnesses.git",
+		HarnessName:    "default",
+		SandboxSize:    "xlarge",
 	}
 
 	manifest, err := RenderJob(run, JobOptions{Namespace: "agent-runner"})
@@ -33,6 +34,7 @@ func TestRenderJobIncludesCoreEnvironment(t *testing.T) {
 	for _, want := range []string{
 		"name: run-req-1",
 		"value: \"https://github.com/example/repo.git\"",
+		"value: \"https://github.com/example/harnesses.git\"",
 		"value: \"feature/demo\"",
 		"memory: \"16Gi\"",
 	} {

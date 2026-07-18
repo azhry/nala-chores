@@ -27,6 +27,7 @@ type RunRequest struct {
 	SourceBranch   string `json:"source_branch"`
 	Prompt         string `json:"prompt"`
 	WorkDirectory  string `json:"work_directory"`
+	HarnessRepoURL string `json:"harness_repo_url"`
 	CreateMR       bool   `json:"create_mr"`
 	IssueKey       string `json:"issue_key"`
 	LinearIssueKey string `json:"linear_issue_key"`
@@ -44,6 +45,7 @@ type Run struct {
 	SourceBranch   string     `json:"source_branch"`
 	Prompt         string     `json:"prompt,omitempty"`
 	WorkDirectory  string     `json:"work_directory"`
+	HarnessRepoURL string     `json:"harness_repo_url,omitempty"`
 	CreateMR       bool       `json:"create_mr"`
 	IssueKey       string     `json:"issue_key,omitempty"`
 	LinearIssueKey string     `json:"linear_issue_key,omitempty"`
@@ -73,6 +75,7 @@ type ConfigurationInput struct {
 	RepoURL             string `json:"repo_url"`
 	SourceBranch        string `json:"source_branch"`
 	WorkDirectory       string `json:"work_directory"`
+	HarnessRepoURL      string `json:"harness_repo_url"`
 	HarnessName         string `json:"harness_name"`
 	SandboxSize         string `json:"sandbox_size"`
 	ConfigPath          string `json:"config_path"`
@@ -92,6 +95,7 @@ type Configuration struct {
 	RepoURL           string    `json:"repo_url"`
 	SourceBranch      string    `json:"source_branch"`
 	WorkDirectory     string    `json:"work_directory"`
+	HarnessRepoURL    string    `json:"harness_repo_url,omitempty"`
 	HarnessName       string    `json:"harness_name"`
 	SandboxSize       string    `json:"sandbox_size"`
 	ConfigPath        string    `json:"config_path,omitempty"`

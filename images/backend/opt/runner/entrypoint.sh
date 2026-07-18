@@ -24,6 +24,7 @@ trap 'write_result failed "unexpected failure on line ${LINENO}" ""' ERR
 log "setup: configuring git and cloning ${SOURCE_BRANCH}"
 configure_git_credentials
 git clone --depth 1 --branch "${SOURCE_BRANCH}" "${REPO_URL}" /workspace/repo
+clone_harness_repo
 cd /workspace/repo
 
 load_harness_config
