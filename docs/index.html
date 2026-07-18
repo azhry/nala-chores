@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Nala Chores turns agent work into scoped Kubernetes jobs with saved project profiles, Linear context, readable logs, and pull-request guarantees."
+      content="Nala Chores is a personal remote coding-agent runner for delegating GitHub tasks from a phone or laptop into sandboxed Minikube jobs."
     />
-    <title>Nala Chores - Kubernetes Agent Runner</title>
+    <title>Nala Chores - Remote Coding Agent Runner</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -34,10 +34,11 @@
       <section class="hero" aria-labelledby="hero-title">
         <div class="hero-panel">
           <p class="kicker">Kubernetes agent runner</p>
-          <h1 id="hero-title">Run coding agents with a clear audit trail.</h1>
+          <h1 id="hero-title">Delegate coding tasks from anywhere.</h1>
           <p class="hero-copy">
-            Nala Chores launches coding agents from saved project profiles, attaches Linear
-            context, stores the transcript, and records the pull request produced by the run.
+            Nala Chores lets me start a configured coding-agent session from a phone or laptop,
+            run it inside a sandboxed Minikube job, and come back to the transcript, branch, and
+            pull request when the work is done.
           </p>
           <div class="actions">
             <a class="button primary" href="https://github.com/azhry/nala-chores">Open repository</a>
@@ -53,18 +54,18 @@
           <div class="route">
             <div class="route-node active">
               <span>issue</span>
-              <strong>Linear issue loaded</strong>
-              <p>Task context becomes the work boundary.</p>
+              <strong>Task context attached</strong>
+              <p>Prompt and Linear issue travel with the run.</p>
             </div>
             <div class="route-node">
               <span>job</span>
-              <strong>Kubernetes job created</strong>
-              <p>Agent runs inside an isolated sandbox.</p>
+              <strong>Sandbox job started</strong>
+              <p>The agent works inside an isolated workspace.</p>
             </div>
             <div class="route-node complete">
               <span>pr</span>
-              <strong>Pull request opened</strong>
-              <p>Review happens in GitHub, not in vague logs.</p>
+              <strong>Pull request ready</strong>
+              <p>I review the result in GitHub when I have time.</p>
             </div>
           </div>
           <div class="artifact-bottom">
@@ -76,38 +77,38 @@
 
       <section class="manifesto" aria-label="Core statement">
         <p>
-          Built for teams that want agent sessions to feel observable, repeatable, and reviewable
-          before the work reaches a repository.
+          Built for the moment when I have a coding task, a phone, and no laptop terminal in front
+          of me.
         </p>
       </section>
 
       <section class="system" id="system" aria-labelledby="system-title">
         <div class="section-copy">
-          <h2 id="system-title">Three surfaces. One controlled loop.</h2>
+          <h2 id="system-title">Set up the project once. Launch sessions when needed.</h2>
         </div>
         <div class="system-board">
           <article>
             <span>Profile</span>
-            <h3>Credentials and harnesses stay with the project.</h3>
+            <h3>Each repository keeps its own run settings.</h3>
             <p>
               Save repo URL, branch, work directory, GitHub, Linear, OpenCode or KiloCode keys,
-              sandbox size, harness URL, and config path once.
+              sandbox size, harness URL, and config path for the project.
             </p>
           </article>
           <article>
             <span>Session</span>
-            <h3>The prompt field is intentionally narrow.</h3>
+            <h3>Starting work is just profile, issue, prompt.</h3>
             <p>
-              Pick a configuration, attach the issue key, write the task, and let the manager render
-              a Kubernetes Job instead of improvising from a shell.
+              Pick a configuration, attach the issue key, write the task, and let the manager create
+              the sandbox job remotely.
             </p>
           </article>
           <article>
             <span>History</span>
-            <h3>Logs read like a transcript, not raw JSON exhaust.</h3>
+            <h3>The run stays inspectable after I leave.</h3>
             <p>
               Inspect runner milestones, agent output, tool calls, failures, job names, branch names,
-              and pull-request URLs from the run ledger.
+              and pull-request URLs from the session history.
             </p>
           </article>
         </div>
@@ -115,30 +116,30 @@
 
       <section class="contract" id="contract" aria-labelledby="contract-title">
         <div>
-          <h2 id="contract-title">Task scope stays explicit from launch to pull request.</h2>
+          <h2 id="contract-title">Remote delegation without starting from zero every time.</h2>
         </div>
         <ul>
           <li>
-            <strong>Linear context is loaded before the agent starts.</strong>
-            <span>The session gets the issue details it needs before editing begins.</span>
+            <strong>Profiles remember the boring setup.</strong>
+            <span>Credentials, harnesses, model choices, repo paths, and sandbox size are saved.</span>
           </li>
           <li>
-            <strong>PR-enabled jobs report the branch and pull request.</strong>
-            <span>The result is easy to inspect from GitHub and the run history.</span>
+            <strong>Runs happen inside disposable Kubernetes jobs.</strong>
+            <span>The agent gets a clean workspace for the task instead of touching my laptop checkout.</span>
           </li>
           <li>
-            <strong>The requested task is repeated in the runner contract.</strong>
-            <span>That keeps the agent oriented toward the prompt and issue context.</span>
+            <strong>History keeps the session usable from mobile.</strong>
+            <span>I can reopen the run, read the transcript, and jump to the PR later.</span>
           </li>
         </ul>
       </section>
 
       <section class="proof" aria-labelledby="proof-title">
         <div class="proof-copy">
-          <h2 id="proof-title">A successful test produced a scoped Nala Grow PR.</h2>
+          <h2 id="proof-title">Tested against a real Nala Grow delegation.</h2>
           <p>
-            The runner created a non-draft pull request for AZH-282 and kept the changes scoped to
-            the requested feeding tests.
+            A saved Nala Grow profile launched the agent with Linear issue AZH-282, ran the task in
+            the sandbox, and produced a non-draft pull request for review.
           </p>
         </div>
         <div class="receipt" aria-label="Verified pull request receipt">

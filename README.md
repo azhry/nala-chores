@@ -1,14 +1,16 @@
 # Nala Chores
 
-Local Minikube MVP for running OpenCode headless in an ephemeral Kubernetes Job, with saved GitHub, Linear, and OpenCode configurations.
+Nala Chores is my personal remote coding-agent runner. It lets me save project profiles, then delegate coding tasks from a phone or laptop into sandboxed Minikube jobs that can clone a repo, load Linear context, run OpenCode or KiloCode, push changes, and create a pull request.
+
+The main use case is mobile-friendly delegation: configure a repository once, open the web UI later, choose the configuration, write the task prompt, and let the runner do the work in an isolated Kubernetes workspace while I am away from my laptop.
 
 ## Components
 
 - `cmd/runner-cli`: submit tasks and poll status.
-- `cmd/runner-manager`: HTTP API and web UI that stores configurations, creates Jobs, and keeps run history/logs.
-- `images/backend`: sandbox image that clones the repo and runs OpenCode phases.
+- `cmd/runner-manager`: HTTP API and mobile-friendly web UI for saved configurations, run launch, and session history.
+- `images/backend`: sandbox image that clones the target repo, loads optional harness code, runs the selected agent, and pushes results.
 - `deploy/minikube`: namespace, RBAC, and manager deployment manifests.
-- `examples`: sample `.opencode-runner.yml` and OpenCode agents/commands.
+- `examples`: sample `.opencode-runner.yml` and OpenCode agents/commands for target repositories.
 
 ## Run Manager Locally
 
@@ -42,6 +44,8 @@ go run ./cmd/runner-cli status --last
 
 ## Minikube Bootstrap
 
+This is designed to run locally in Minikube, with a web UI that works well on mobile-sized screens. Use `http://chores.nala.local` for a stable local browser URL, or expose the manager through your own tunnel, VPN, or reverse proxy when you want to start and inspect runs from a smartphone.
+
 ```bash
 minikube start --cpus 6 --memory 12288 --driver docker
 minikube addons enable metrics-server
@@ -59,7 +63,7 @@ kubectl -n agent-runner create secret generic runner-secrets \
   --from-literal=openai_api_key="$OPENAI_API_KEY"
 ```
 
-The web UI can also store per-configuration GitHub, Linear, and OpenCode keys. Each configuration syncs one stable Kubernetes Secret, and all runs for that configuration reuse it.
+The web UI stores credentials per configuration. Each saved project profile syncs one stable Kubernetes Secret, and all runs for that profile reuse it instead of generating a new secret for every session.
 
 Build and load images:
 
@@ -76,20 +80,20 @@ Deploy manager:
 kubectl apply -f deploy/minikube/runner-manager.yaml
 ```
 
-Then open the web UI:
+Then open the web UI from the machine running Minikube:
 
 ```bash
 minikube service -n agent-runner runner-manager
 ```
 
-To use a stable local hostname through the minikube ingress controller:
+To use a stable local hostname through the Minikube ingress controller:
 
 ```bash
 kubectl apply -f deploy/minikube/ingress.yaml
 ./scripts/chores-local-url.sh
 ```
 
-The helper maps `chores.nala.local` to `127.0.0.1` in `/etc/hosts` and runs a local port-80 forward to the minikube ingress controller. Leave it running, then open:
+The helper maps `chores.nala.local` to `127.0.0.1` in `/etc/hosts` and runs a local port-80 forward to the Minikube ingress controller. Leave it running, then open:
 
 ```text
 http://chores.nala.local
@@ -113,6 +117,6 @@ Set `agent_provider` to `opencode` or `kilocode`. OpenCode defaults to `opencode
 
 ## Web UI Flow
 
-1. Open **Configurations** and save a configuration with repo URL, optional harness repository URL, agent provider/model, branch, GitHub API key, Linear API key, and OpenCode or Kilo API key.
-2. Open **Run Session**, select a configuration, enter a prompt, optionally add a Linear issue key, and run it.
-3. Open **History** to inspect sessions for each configuration and view stored logs.
+1. Open **Configurations** and save a project profile with repo URL, optional harness repository URL, agent provider/model, branch, sandbox size, GitHub API key, Linear API key, and OpenCode or Kilo API key.
+2. Open **Run**, select the saved profile, enter the coding-task prompt, optionally add a Linear issue key, and start the sandboxed session.
+3. Open **History** to reopen previous sessions, read the chat-style transcript, inspect job metadata, and jump to the created pull request.
