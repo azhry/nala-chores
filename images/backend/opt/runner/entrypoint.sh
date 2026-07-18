@@ -116,6 +116,21 @@ if [[ "${verdict}" != "PASS" ]]; then
   exit 1
 fi
 
+if [[ "${PUSH_CHANGES}" == "true" || "${CREATE_MR}" == "true" ]]; then
+  cd /workspace/repo
+  ahead_count="$(git rev-list --count "origin/${SOURCE_BRANCH}..HEAD" 2>/dev/null || printf '0')"
+  if git diff --quiet && git diff --cached --quiet && [[ "${ahead_count}" == "0" ]]; then
+    log "no repository changes detected after edit; requesting filesystem fix"
+    run_session fix "${EDIT_AGENT}" "Nala Chores cannot create a pull request because there are no real Git changes in /workspace/repo.
+
+You must make an actual filesystem change inside /workspace/repo for the requested task. Use shell commands if needed. After editing, run:
+
+git status --porcelain
+
+Do not finish until git status shows at least one changed, added, or deleted file. Also keep /tmp/pr_title.txt and /tmp/pr_body.txt present for runner PR creation." "${EDIT_SESSION_ID}"
+  fi
+fi
+
 MR_URL=""
 if [[ "${PUSH_CHANGES}" == "true" || "${CREATE_MR}" == "true" ]]; then
   log "committing changes"
@@ -125,6 +140,11 @@ if [[ "${PUSH_CHANGES}" == "true" || "${CREATE_MR}" == "true" ]]; then
   else
     log "skipping push because no changes were committed"
   fi
+fi
+
+if [[ "${CREATE_MR}" == "true" && "${CHANGES_COMMITTED}" != "true" ]]; then
+  write_result failed "merge request creation was requested but no repository changes were committed" "${EDIT_SESSION_ID}"
+  exit 1
 fi
 
 if [[ "${CREATE_MR}" == "true" && "${CHANGES_PUSHED}" == "true" ]]; then

@@ -62,7 +62,6 @@ func submit(args []string) error {
 	issue := fs.String("issue", "", "issue key to pass to the harness")
 	configPath := fs.String("config", "", "optional repo-relative harness config path")
 	createMR := fs.Bool("mr", false, "create a merge request after validation")
-	noMR := fs.Bool("no-mr", false, "do not create a merge request")
 	pushChanges := fs.Bool("push", false, "commit and push changes without creating an MR")
 	strictDirty := fs.Bool("strict-dirty", false, "fail when the local working tree has uncommitted changes")
 	pushBranch := fs.Bool("push-branch", false, "push the current branch before submitting")
@@ -79,10 +78,6 @@ func submit(args []string) error {
 	if *prompt == "" {
 		return errors.New("--prompt or --prompt-file is required")
 	}
-	if *noMR {
-		*createMR = false
-	}
-
 	if *repoURL == "" {
 		value, err := git("config", "--get", "remote.origin.url")
 		if err != nil {

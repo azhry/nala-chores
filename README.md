@@ -31,7 +31,7 @@ go run ./cmd/runner-cli submit \
   --agent-provider kilocode \
   --agent-model kilo/kilo-auto/free \
   --workdir . \
-  --no-mr
+  --mr
 ```
 
 Check status:
