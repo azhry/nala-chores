@@ -26,6 +26,7 @@ func TestRenderJobIncludesCoreEnvironment(t *testing.T) {
 		AgentModel:     "kilo/kilo-auto/free",
 		HarnessName:    "default",
 		SandboxSize:    "xlarge",
+		LinearIssueKey: "AZH-282",
 	}
 
 	manifest, err := RenderJob(run, JobOptions{Namespace: "agent-runner"})
@@ -40,6 +41,7 @@ func TestRenderJobIncludesCoreEnvironment(t *testing.T) {
 		"value: \"kilocode\"",
 		"value: \"kilo/kilo-auto/free\"",
 		"value: \"feature/demo\"",
+		"value: \"AZH-282\"",
 		"memory: \"16Gi\"",
 	} {
 		if !strings.Contains(text, want) {

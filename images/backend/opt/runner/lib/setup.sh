@@ -179,8 +179,12 @@ prepare_opencode_config() {
 }
 
 load_linear_issue_context() {
-  if [[ -z "${LINEAR_API_KEY:-}" || -z "${LINEAR_ISSUE_KEY:-}" ]]; then
+  if [[ -z "${LINEAR_ISSUE_KEY:-}" ]]; then
     return
+  fi
+  if [[ -z "${LINEAR_API_KEY:-}" ]]; then
+    log "Linear issue ${LINEAR_ISSUE_KEY} was requested but LINEAR_API_KEY is not configured"
+    return 1
   fi
 
   log "loading Linear issue context for ${LINEAR_ISSUE_KEY}"
@@ -206,7 +210,8 @@ load_linear_issue_context() {
     ' || true)"
 
   if [[ -z "${ISSUE_CONTEXT}" ]]; then
-    log "Linear issue context not found for ${LINEAR_ISSUE_KEY}; continuing without ticket details"
+    log "Linear issue context not found for ${LINEAR_ISSUE_KEY}"
+    return 1
   else
     log "loaded Linear issue context for ${LINEAR_ISSUE_KEY}"
   fi

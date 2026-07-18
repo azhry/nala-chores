@@ -34,7 +34,10 @@ log "agent provider ${AGENT_PROVIDER}: command=${AGENT_COMMAND} model=${MODEL}"
 run_init_script
 prepare_opencode_config
 prepare_kilo_config
-load_linear_issue_context
+if ! load_linear_issue_context; then
+  write_result failed "Linear issue ${LINEAR_ISSUE_KEY} could not be loaded" ""
+  exit 1
+fi
 
 cd "/workspace/repo/${WORK_DIR}"
 
@@ -55,11 +58,22 @@ ${ISSUE_CONTEXT}}"
   PLAN_TEXT="$(parse_final_text /tmp/plan.jsonl)"
 fi
 
-EDIT_PROMPT="${PROMPT}"
+EDIT_PROMPT="## Nala Chores Task Scope
+You are only allowed to do the requested task below.
+
+Requested task:
+${PROMPT}
+
+Scope rules:
+- Implement only the requested task and, when present, the Linear issue context.
+- Do not invent substitute work, runner verification changes, documentation notes, or cleanup tasks.
+- Do not add or modify docs, examples, metadata, or unrelated files unless the requested task or Linear issue explicitly asks for that.
+- If the requested task cannot be completed from the available prompt and Linear context, fail with a clear reason instead of doing nearby work.
+- Keep the diff as small as possible and directly tied to the requested task."
 if [[ -n "${ISSUE_CONTEXT}" ]]; then
   EDIT_PROMPT="${EDIT_PROMPT}
 
-## Linear Issue
+## Required Linear Issue Context
 ${ISSUE_CONTEXT}"
 fi
 if [[ -n "${PLAN_TEXT}" ]]; then
@@ -77,7 +91,9 @@ if [[ "${CREATE_MR}" == "true" ]]; then
 - Commit changes locally if your workflow requires it, but leave remote push and PR creation to Nala Chores.
 - Write the PR title to /tmp/pr_title.txt.
 - Write the complete PR description to /tmp/pr_body.txt.
-- The PR description must follow the repository or harness pull request template when one exists, and must include summary, tests/checks run, risk, and issue/task context."
+- The PR title and description must describe only the requested task.
+- The PR description must follow the repository or harness pull request template when one exists, and must include summary, tests/checks run, risk, and issue/task context.
+- Do not describe runner verification as the change unless runner verification is the requested task."
 fi
 
 log "editing with agent ${EDIT_AGENT}"
@@ -123,7 +139,7 @@ if [[ "${PUSH_CHANGES}" == "true" || "${CREATE_MR}" == "true" ]]; then
     log "no repository changes detected after edit; requesting filesystem fix"
     run_session fix "${EDIT_AGENT}" "Nala Chores cannot create a pull request because there are no real Git changes in /workspace/repo.
 
-You must make an actual filesystem change inside /workspace/repo for the requested task. Use shell commands if needed. After editing, run:
+You must make an actual filesystem change inside /workspace/repo for the requested task only. Do not add documentation or runner-verification files unless the requested task explicitly asks for documentation. Use shell commands if needed. After editing, run:
 
 git status --porcelain
 
