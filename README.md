@@ -82,6 +82,19 @@ Then open the web UI:
 minikube service -n agent-runner runner-manager
 ```
 
+To use a stable local hostname through the minikube ingress controller:
+
+```bash
+kubectl apply -f deploy/minikube/ingress.yaml
+./scripts/chores-local-url.sh
+```
+
+The helper maps `chores.nala.local` to `127.0.0.1` in `/etc/hosts` and runs a local port-80 forward to the minikube ingress controller. Leave it running, then open:
+
+```text
+http://chores.nala.local
+```
+
 You can also port-forward manually and use `runner-cli` with `RUNNER_API_URL=http://127.0.0.1:8080`.
 
 ```bash
