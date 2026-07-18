@@ -34,11 +34,10 @@
       <section class="hero" aria-labelledby="hero-title">
         <div class="hero-panel">
           <p class="kicker">Kubernetes agent runner</p>
-          <h1 id="hero-title">Agent work should leave evidence.</h1>
+          <h1 id="hero-title">Run coding agents with a clear audit trail.</h1>
           <p class="hero-copy">
-            Nala Chores launches scoped coding agents from saved project profiles, locks them to
-            Linear context, stores the transcript, and refuses to call a run successful without a
-            real pull request.
+            Nala Chores launches coding agents from saved project profiles, attaches Linear
+            context, stores the transcript, and records the pull request produced by the run.
           </p>
           <div class="actions">
             <a class="button primary" href="https://github.com/azhry/nala-chores">Open repository</a>
@@ -77,8 +76,8 @@
 
       <section class="manifesto" aria-label="Core statement">
         <p>
-          Built for the awkward middle: too operational for chat, too sensitive for random local
-          scripts, too expensive to trust without traceability.
+          Built for teams that want agent sessions to feel observable, repeatable, and reviewable
+          before the work reaches a repository.
         </p>
       </section>
 
@@ -116,20 +115,20 @@
 
       <section class="contract" id="contract" aria-labelledby="contract-title">
         <div>
-          <h2 id="contract-title">The runner is biased against fake progress.</h2>
+          <h2 id="contract-title">Task scope stays explicit from launch to pull request.</h2>
         </div>
         <ul>
           <li>
-            <strong>Linear context is mandatory when a key is supplied.</strong>
-            <span>No issue context, no agent guessing.</span>
+            <strong>Linear context is loaded before the agent starts.</strong>
+            <span>The session gets the issue details it needs before editing begins.</span>
           </li>
           <li>
-            <strong>PR-enabled jobs must change the repository.</strong>
-            <span>No docs-only substitutions or runner-verification theater.</span>
+            <strong>PR-enabled jobs report the branch and pull request.</strong>
+            <span>The result is easy to inspect from GitHub and the run history.</span>
           </li>
           <li>
-            <strong>Prompt scope is repeated inside the agent contract.</strong>
-            <span>The requested task is the boundary, not a suggestion.</span>
+            <strong>The requested task is repeated in the runner contract.</strong>
+            <span>That keeps the agent oriented toward the prompt and issue context.</span>
           </li>
         </ul>
       </section>
@@ -138,8 +137,8 @@
         <div class="proof-copy">
           <h2 id="proof-title">A successful test produced a scoped Nala Grow PR.</h2>
           <p>
-            The runner created a non-draft pull request for AZH-282 with only task-relevant feeding
-            tests changed.
+            The runner created a non-draft pull request for AZH-282 and kept the changes scoped to
+            the requested feeding tests.
           </p>
         </div>
         <div class="receipt" aria-label="Verified pull request receipt">

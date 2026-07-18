@@ -172,6 +172,10 @@ func (s *Server) getRunLogs(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"logs": sanitizeLogOutput(run.Logs)})
 		return
 	}
+	if !s.cfg.ApplyJobs {
+		writeJSON(w, http.StatusOK, map[string]string{"logs": sanitizeLogOutput(firstNonEmpty(run.Message, "Dry-run mode: job manifest rendered but not applied."))})
+		return
+	}
 	if run.JobName == "" {
 		writeJSON(w, http.StatusOK, map[string]string{"logs": "Job has not been created yet."})
 		return

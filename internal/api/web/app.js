@@ -80,6 +80,7 @@ function App() {
 
   useEffect(() => {
     if (view !== "history") return undefined;
+    loadRuns().catch(() => {});
     const id = window.setInterval(() => {
       loadRuns().catch(() => {});
       if (selectedRunID) {
@@ -391,6 +392,11 @@ function RunView({ configs, selectedConfigID, setSelectedConfigID, onRun, messag
 function HistoryView({ configs, runs, historyConfigID, setHistoryConfigID, selectedRun, selectedRunID, logs, onRefreshRuns, onSelectRun, onRefreshLogs, onStop }) {
   const entries = useMemo(() => parseLogEntries(logs), [logs]);
 
+  useEffect(() => {
+    if (selectedRunID || !runs.length) return;
+    onSelectRun(runs[0].request_id);
+  }, [onSelectRun, runs, selectedRunID]);
+
   return h("section", { className: "history-grid" },
     h("div", { className: "ops-card runs-panel" },
       h(CardHeader, {
@@ -417,22 +423,28 @@ function HistoryView({ configs, runs, historyConfigID, setHistoryConfigID, selec
         })) : h(EmptyState, { title: "No sessions", body: "Run history will appear here after a session starts." })
       )
     ),
-    h("div", { className: "ops-card detail-panel" },
-      h(CardHeader, {
-        icon: "fact_check",
-        title: "Session Detail",
-        subtitle: selectedRun ? selectedRun.request_id : "Select a run to inspect.",
-        action: h("div", { className: "header-actions" },
-          h("button", { className: "ghost-button", type: "button", disabled: !selectedRunID, onClick: onRefreshLogs }, h(Icon, { name: "sync" }), "Logs"),
-          h("button", { className: "danger-button", type: "button", disabled: !selectedRun || isTerminal(selectedRun.phase), onClick: onStop }, "Stop")
-        ),
-      }),
-      selectedRun ? h(RunDetail, { run: selectedRun }) : h(EmptyState, { title: "No session selected", body: "Open a run to view repository, job, PR, and prompt metadata." })
-    ),
-    h("div", { className: "ops-card transcript-panel" },
-      h(CardHeader, { icon: "terminal", title: "Session Transcript", subtitle: "Agent messages, tool output, runner milestones, and errors." }),
-      h("div", { className: "chat-log" },
-        entries.length ? entries.map((entry, index) => h(ChatEntry, { key: `${entry.title}-${index}`, entry })) : h(EmptyState, { title: "No logs", body: selectedRun ? "Logs are not available yet." : "Select a run to read the transcript." })
+    h("div", { className: "history-inspector" },
+      h("div", { className: "ops-card transcript-panel" },
+        h(CardHeader, {
+          icon: "terminal",
+          title: "Session Transcript",
+          subtitle: selectedRun ? selectedRun.request_id : "Select a run to read the transcript.",
+          action: h("div", { className: "header-actions" },
+            h("button", { className: "ghost-button", type: "button", disabled: !selectedRunID, onClick: onRefreshLogs }, h(Icon, { name: "sync" }), "Refresh"),
+            h("button", { className: "danger-button", type: "button", disabled: !selectedRun || isTerminal(selectedRun.phase), onClick: onStop }, "Stop")
+          ),
+        }),
+        h("div", { className: "chat-log" },
+          entries.length ? entries.map((entry, index) => h(ChatEntry, { key: `${entry.title}-${index}`, entry })) : h(EmptyState, { title: "No logs", body: selectedRun ? "Logs are not available yet." : "Select a run to read the transcript." })
+        )
+      ),
+      h("div", { className: "ops-card detail-panel" },
+        h(CardHeader, {
+          icon: "fact_check",
+          title: "Session Detail",
+          subtitle: selectedRun ? "Repository, job, PR, and prompt metadata." : "No session selected.",
+        }),
+        selectedRun ? h(RunDetail, { run: selectedRun }) : h(EmptyState, { title: "No session selected", body: "Open a run to view repository, job, PR, and prompt metadata." })
       )
     )
   );

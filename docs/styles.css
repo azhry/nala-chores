@@ -1,16 +1,17 @@
 :root {
   color-scheme: dark;
-  --field: oklch(58% 0.21 31);
-  --field-deep: oklch(38% 0.16 31);
-  --ink: oklch(13% 0.025 260);
-  --ink-2: oklch(18% 0.03 260);
-  --paper: oklch(96% 0.012 80);
-  --muted: oklch(78% 0.022 75);
-  --line: oklch(96% 0.012 80 / 0.2);
-  --line-dark: oklch(13% 0.025 260 / 0.2);
-  --acid: oklch(82% 0.18 156);
-  --blueprint: oklch(72% 0.16 248);
-  --warning: oklch(85% 0.16 83);
+  --field: oklch(20% 0.025 240);
+  --field-soft: oklch(24% 0.03 240);
+  --field-deep: oklch(16% 0.024 240);
+  --ink: oklch(12% 0.018 240);
+  --ink-2: oklch(18% 0.024 240);
+  --paper: oklch(95% 0.01 92);
+  --muted: oklch(78% 0.02 232);
+  --line: oklch(95% 0.01 92 / 0.18);
+  --line-dark: oklch(12% 0.018 240 / 0.18);
+  --accent: oklch(74% 0.09 180);
+  --accent-deep: oklch(47% 0.08 184);
+  --warning: oklch(82% 0.11 86);
   --body: "Atkinson Hyperlegible", ui-sans-serif, system-ui, sans-serif;
   --display: "Azeret Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
@@ -27,7 +28,7 @@ html {
 body {
   margin: 0;
   min-width: 320px;
-  background: var(--field);
+  background: var(--field-deep);
   color: var(--paper);
   font: 16px/1.62 var(--body);
 }
@@ -102,7 +103,7 @@ h3 {
   height: 28px;
   place-items: center;
   background: var(--ink);
-  color: var(--warning);
+  color: var(--accent);
   font-size: 13px;
 }
 
@@ -138,7 +139,7 @@ h3 {
 }
 
 .kicker {
-  color: var(--ink);
+  color: var(--accent);
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.04em;
@@ -184,7 +185,7 @@ h1 {
 
 .button.secondary {
   background: transparent;
-  color: var(--ink);
+  color: var(--paper);
 }
 
 .artifact {
@@ -240,11 +241,11 @@ h1 {
 }
 
 .route-node.active {
-  background: oklch(72% 0.16 248 / 0.14);
+  background: oklch(74% 0.09 180 / 0.14);
 }
 
 .route-node.complete {
-  background: oklch(82% 0.18 156 / 0.14);
+  background: oklch(82% 0.11 86 / 0.11);
 }
 
 .artifact-bottom {
@@ -252,8 +253,8 @@ h1 {
 }
 
 .manifesto {
-  background: var(--paper);
-  color: var(--ink);
+  background: var(--field-soft);
+  color: var(--paper);
   padding: clamp(56px, 10vw, 120px) max(20px, calc((100vw - 1180px) / 2));
 }
 
@@ -310,8 +311,8 @@ h2 {
 
 .system-board span {
   width: fit-content;
-  background: var(--field);
-  color: var(--paper);
+  background: var(--accent);
+  color: var(--ink);
   padding: 5px 8px;
   font: 700 12px/1 var(--display);
 }
@@ -331,7 +332,7 @@ h2 {
   display: grid;
   grid-template-columns: minmax(0, 0.9fr) minmax(360px, 1.1fr);
   gap: clamp(26px, 6vw, 84px);
-  background: var(--field-deep);
+  background: var(--field);
 }
 
 .contract ul {
@@ -365,7 +366,7 @@ h2 {
   grid-template-columns: minmax(0, 0.86fr) minmax(340px, 1.14fr);
   gap: clamp(26px, 6vw, 76px);
   align-items: center;
-  background: var(--paper);
+  background: oklch(91% 0.018 190);
   color: var(--ink);
 }
 
@@ -376,7 +377,7 @@ h2 {
 
 .proof-copy p:not(.label) {
   max-width: 640px;
-  color: oklch(29% 0.045 260);
+  color: oklch(30% 0.03 235);
   font-size: 18px;
 }
 
@@ -441,7 +442,7 @@ pre code {
   gap: 16px;
   padding: 24px max(20px, calc((100vw - 1180px) / 2));
   background: var(--field);
-  color: var(--ink);
+  color: var(--paper);
   font: 800 13px/1.4 var(--display);
 }
 
@@ -458,7 +459,7 @@ pre code {
   }
 
   .command-shell button:hover {
-    background: var(--acid);
+    background: var(--accent);
   }
 }
 
