@@ -4,15 +4,22 @@ create_merge_request() {
   local branch="${OUTPUT_BRANCH:-agent/${REQUEST_ID}}"
   local token="${GITHUB_TOKEN:-${GIT_TOKEN:-}}"
   if [[ -n "${GITHUB_TOKEN:-${GIT_TOKEN:-}}" && "${REPO_URL}" == *github.com* ]]; then
+    local title body draft_args
+    title="$(pull_request_title)"
+    body="$(pull_request_body)"
     if command -v gh >/dev/null 2>&1; then
+      draft_args=()
+      if [[ "$(bool "${MR_DRAFT:-false}")" == "true" ]]; then
+        draft_args=(--draft)
+      fi
       GH_TOKEN="${token}" gh pr create \
-        --draft \
-        --title "${MR_TITLE:-Agent run ${REQUEST_ID}}" \
-        --body "Created by Nala Chores for ${REQUEST_ID}." 2>/dev/null
+        "${draft_args[@]}" \
+        --title "${title}" \
+        --body "${body}" 2>/dev/null
       return
     fi
 
-    create_github_pull_request "${token}" "${branch}"
+    create_github_pull_request "${token}" "${branch}" "${title}" "${body}"
     return
   fi
 
@@ -23,6 +30,8 @@ create_merge_request() {
 create_github_pull_request() {
   local token="$1"
   local branch="$2"
+  local title="$3"
+  local body="$4"
   local repo_path
   repo_path="$(github_repo_path)"
   if [[ -z "${repo_path}" ]]; then
@@ -31,15 +40,15 @@ create_github_pull_request() {
     return
   fi
 
-  local title="${MR_TITLE:-Agent run ${REQUEST_ID}}"
-  local body="${MR_BODY:-Created by Nala Chores for ${REQUEST_ID}.}"
-  local payload
+  local payload draft
+  draft="$(bool "${MR_DRAFT:-false}")"
   payload="$(jq -n \
     --arg title "${title}" \
     --arg head "${branch}" \
     --arg base "${SOURCE_BRANCH}" \
     --arg body "${body}" \
-    '{title: $title, head: $head, base: $base, body: $body, draft: true}')"
+    --argjson draft "${draft}" \
+    '{title: $title, head: $head, base: $base, body: $body, draft: $draft}')"
 
   local response status url message
   response="$(curl -sS -w '\n%{http_code}' \
@@ -59,6 +68,67 @@ create_github_pull_request() {
   message="$(printf '%s' "${response}" | jq -r '.message // empty' 2>/dev/null || true)"
   log "GitHub PR creation failed with HTTP ${status}${message:+: ${message}}"
   printf ''
+}
+
+pull_request_title() {
+  local artifact
+  for artifact in \
+    "${MR_TITLE_FILE:-}" \
+    "/tmp/pr_title.txt" \
+    "/workspace/repo/.nala-chores/pr-title.txt"; do
+    if [[ -n "${artifact}" && -s "${artifact}" ]]; then
+      head -n 1 "${artifact}" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//'
+      return
+    fi
+  done
+  if [[ -n "${MR_TITLE:-}" ]]; then
+    printf '%s' "${MR_TITLE}"
+    return
+  fi
+  git -C /workspace/repo log -1 --pretty=%s 2>/dev/null || printf 'Agent run %s' "${REQUEST_ID}"
+}
+
+pull_request_body() {
+  local artifact
+  for artifact in \
+    "${MR_BODY_FILE:-}" \
+    "/tmp/pr_body.txt" \
+    "/tmp/pr_body.md" \
+    "/workspace/repo/.nala-chores/pr-body.md" \
+    "/workspace/repo/.nala-chores/pr-body.txt"; do
+    if [[ -n "${artifact}" && -s "${artifact}" ]]; then
+      cat "${artifact}"
+      return
+    fi
+  done
+  if [[ -n "${MR_BODY:-}" ]]; then
+    printf '%s' "${MR_BODY}"
+    return
+  fi
+  fallback_pull_request_body
+}
+
+fallback_pull_request_body() {
+  local commit subject stats
+  commit="$(git -C /workspace/repo rev-parse --short HEAD 2>/dev/null || true)"
+  subject="$(git -C /workspace/repo log -1 --pretty=%s 2>/dev/null || true)"
+  stats="$(git -C /workspace/repo show --stat --oneline --no-renames --format='' HEAD 2>/dev/null || true)"
+  cat <<EOF
+## Summary
+- ${subject:-Agent changes for ${REQUEST_ID}}
+
+## Verification
+- Runner completed successfully.
+
+## Delivery
+- Request ID: ${REQUEST_ID}
+- Commit: ${commit:-unknown}
+
+## Changed Files
+\`\`\`
+${stats:-No diff stat available.}
+\`\`\`
+EOF
 }
 
 github_repo_path() {

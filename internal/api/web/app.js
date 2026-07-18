@@ -127,6 +127,7 @@ function renderDetail(run) {
     ${detail("Agent model", run.agent_model || "opencode/big-pickle")}
     ${detail("Branch", run.source_branch)}
     ${detail("Linear issue", run.linear_issue_key || "None")}
+    ${detail("Pull request", run.mr_url || "None", true)}
     ${detail("Job", run.job_name || "Pending")}
     ${detail("Logs command", run.logs_command || "Pending", true)}
     ${detail("Message", run.message || "No message", true)}

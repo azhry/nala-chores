@@ -69,6 +69,17 @@ if [[ -n "${PLAN_TEXT}" ]]; then
 ${PLAN_TEXT}"
 fi
 
+if [[ "${CREATE_MR}" == "true" ]]; then
+  EDIT_PROMPT="${EDIT_PROMPT}
+
+## Nala Chores Delivery Contract
+- Do not create a pull request or merge request yourself.
+- Commit changes locally if your workflow requires it, but leave remote push and PR creation to Nala Chores.
+- Write the PR title to /tmp/pr_title.txt.
+- Write the complete PR description to /tmp/pr_body.txt.
+- The PR description must follow the repository or harness pull request template when one exists, and must include summary, tests/checks run, risk, and issue/task context."
+fi
+
 log "editing with agent ${EDIT_AGENT}"
 run_session edit "${EDIT_AGENT}" "${EDIT_PROMPT}"
 EDIT_SESSION_ID="$(parse_session_id /tmp/edit.jsonl)"

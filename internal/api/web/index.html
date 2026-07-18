@@ -4,6 +4,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Nala Chores</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
@@ -17,9 +20,9 @@
 
     <main class="layout">
       <nav class="menu">
-        <button class="menu-item active" data-view="configs" type="button">Configurations</button>
-        <button class="menu-item" data-view="run" type="button">Run Session</button>
-        <button class="menu-item" data-view="history" type="button">History</button>
+        <button class="menu-item active" data-view="configs" type="button"><span class="material-symbols-outlined">settings</span><span>Configurations</span></button>
+        <button class="menu-item" data-view="run" type="button"><span class="material-symbols-outlined">play_arrow</span><span>Run</span></button>
+        <button class="menu-item" data-view="history" type="button"><span class="material-symbols-outlined">history</span><span>History</span></button>
       </nav>
 
       <section class="view active" id="configsView">
