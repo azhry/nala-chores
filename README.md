@@ -1,8 +1,8 @@
 # Nala Chores
 
-Nala Chores is my personal remote coding-agent runner. It lets me save project profiles, then delegate coding tasks from a phone or laptop into sandboxed Minikube jobs that can clone a repo, load Linear context, run OpenCode or KiloCode, push changes, and create a pull request.
+Nala Chores is a personal remote coding-agent runner. It saves project profiles so coding tasks can be delegated from a phone or laptop into sandboxed Minikube jobs that clone a repo, load Linear context, run OpenCode or KiloCode, push changes, and create a pull request.
 
-The main use case is mobile-friendly delegation: configure a repository once, open the web UI later, choose the configuration, write the task prompt, and let the runner do the work in an isolated Kubernetes workspace while I am away from my laptop.
+The main use case is mobile-friendly delegation: configure a repository once, open the web UI later, choose the configuration, write the task prompt, and let the runner do the work in an isolated Kubernetes workspace without keeping a laptop terminal open.
 
 ## Components
 
