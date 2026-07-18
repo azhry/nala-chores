@@ -119,6 +119,13 @@ fi
 if [[ "${CREATE_MR}" == "true" && "${CHANGES_PUSHED}" == "true" ]]; then
   log "creating merge request"
   MR_URL="$(create_merge_request || true)"
+  if [[ -z "${MR_URL}" ]]; then
+    write_result failed "merge request creation was requested but no merge request URL was produced" "${EDIT_SESSION_ID}"
+    exit 1
+  fi
+elif [[ "${CREATE_MR}" == "true" && "${CHANGES_COMMITTED}" == "true" ]]; then
+  write_result failed "merge request creation was requested but changes were not pushed" "${EDIT_SESSION_ID}"
+  exit 1
 fi
 
 write_result succeeded "run completed" "${EDIT_SESSION_ID}" "${MR_URL}"
