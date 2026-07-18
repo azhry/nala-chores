@@ -18,7 +18,7 @@ spec:
       serviceAccountName: runner-manager
       containers:
         - name: manager
-          image: opencode-runner-manager:kilocode-v6
+          image: opencode-runner-manager:kilocode-v7
           imagePullPolicy: IfNotPresent
           env:
             - name: RUNNER_MANAGER_ADDR

@@ -151,11 +151,13 @@ func (s *Server) createRun(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) getRun(w http.ResponseWriter, r *http.Request) {
-	run, err := s.store.Get(r.PathValue("request_id"))
+	id := r.PathValue("request_id")
+	run, err := s.store.Get(id)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "run not found")
 		return
 	}
+	run = s.reconcileRunResult(run)
 	writeJSON(w, http.StatusOK, run)
 }
 
@@ -206,10 +208,10 @@ func (s *Server) listRuns(w http.ResponseWriter, r *http.Request) {
 		limit = parsed
 	}
 	if configID := r.URL.Query().Get("config_id"); configID != "" {
-		writeJSON(w, http.StatusOK, runner.RunList{Runs: s.store.ListByConfig(configID, limit)})
+		writeJSON(w, http.StatusOK, runner.RunList{Runs: s.reconcileRunResults(s.store.ListByConfig(configID, limit))})
 		return
 	}
-	writeJSON(w, http.StatusOK, runner.RunList{Runs: s.store.List(limit)})
+	writeJSON(w, http.StatusOK, runner.RunList{Runs: s.reconcileRunResults(s.store.List(limit))})
 }
 
 func (s *Server) stopRun(w http.ResponseWriter, r *http.Request) {
@@ -400,7 +402,7 @@ func (s *Server) syncConfigSecret(configID string) error {
 			"name":      secretName,
 			"namespace": s.cfg.Namespace,
 		},
-		"type": "Opaque",
+		"type":       "Opaque",
 		"stringData": data,
 	}
 	body, err := json.Marshal(manifest)
@@ -449,7 +451,140 @@ func (s *Server) captureLogs(id, jobName string) {
 	}
 	_, _ = s.store.Update(id, func(run *runner.Run) {
 		run.Logs = sanitizeLogOutput(logs)
+		applyRunnerResult(run, logs)
 	})
+}
+
+func (s *Server) reconcileRunResults(runs []runner.Run) []runner.Run {
+	for i := range runs {
+		runs[i] = s.reconcileRunResult(runs[i])
+	}
+	return runs
+}
+
+func (s *Server) reconcileRunResult(run runner.Run) runner.Run {
+	if run.Logs == "" {
+		return run
+	}
+	if result, ok := extractRunnerResult(run.RequestID, run.Logs); ok && resultHasNewData(run, result) {
+		updated, err := s.store.Update(run.RequestID, func(run *runner.Run) {
+			applyParsedRunnerResult(run, result)
+		})
+		if err == nil {
+			return updated
+		}
+	}
+	return run
+}
+
+type runnerResult struct {
+	RequestID   string `json:"request_id"`
+	Status      string `json:"status"`
+	Message     string `json:"message"`
+	MRURL       string `json:"mr_url"`
+	CompletedAt string `json:"completed_at"`
+}
+
+func resultHasNewData(run runner.Run, result runnerResult) bool {
+	if result.MRURL != "" && run.MRURL != result.MRURL {
+		return true
+	}
+	if result.Message != "" && run.Message != result.Message {
+		return true
+	}
+	switch strings.ToLower(result.Status) {
+	case "succeeded", "success":
+		return run.Phase != runner.PhaseSucceeded
+	case "failed", "failure", "error":
+		return run.Phase != runner.PhaseFailed
+	default:
+		return false
+	}
+}
+
+func applyRunnerResult(run *runner.Run, logs string) {
+	if result, ok := extractRunnerResult(run.RequestID, logs); ok {
+		applyParsedRunnerResult(run, result)
+	}
+}
+
+func applyParsedRunnerResult(run *runner.Run, result runnerResult) {
+	if result.Message != "" {
+		run.Message = result.Message
+	}
+	if result.MRURL != "" {
+		run.MRURL = result.MRURL
+	}
+	switch strings.ToLower(result.Status) {
+	case "succeeded", "success":
+		run.Phase = runner.PhaseSucceeded
+	case "failed", "failure", "error":
+		run.Phase = runner.PhaseFailed
+	}
+	if result.CompletedAt != "" {
+		if completedAt, err := time.Parse(time.RFC3339, result.CompletedAt); err == nil {
+			run.CompletedAt = &completedAt
+		}
+	}
+}
+
+func extractRunnerResult(requestID, logs string) (runnerResult, bool) {
+	var latest runnerResult
+	found := false
+	for _, candidate := range jsonObjectsIn(logs) {
+		var result runnerResult
+		if err := json.Unmarshal([]byte(candidate), &result); err != nil {
+			continue
+		}
+		if result.RequestID != requestID || result.Status == "" || result.CompletedAt == "" {
+			continue
+		}
+		latest = result
+		found = true
+	}
+	return latest, found
+}
+
+func jsonObjectsIn(value string) []string {
+	var objects []string
+	start := -1
+	depth := 0
+	inString := false
+	escaped := false
+	for i, r := range value {
+		if inString {
+			if escaped {
+				escaped = false
+				continue
+			}
+			switch r {
+			case '\\':
+				escaped = true
+			case '"':
+				inString = false
+			}
+			continue
+		}
+		switch r {
+		case '"':
+			inString = true
+		case '{':
+			if depth == 0 {
+				start = i
+			}
+			depth++
+		case '}':
+			if depth == 0 {
+				continue
+			}
+			depth--
+			if depth == 0 && start >= 0 {
+				objects = append(objects, value[start:i+1])
+				start = -1
+			}
+		}
+	}
+	return objects
 }
 
 var logSecretPatterns = []*regexp.Regexp{
