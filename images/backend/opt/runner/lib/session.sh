@@ -30,7 +30,7 @@ run_session() {
   fi
 
   timeout "${SESSION_TIMEOUT}" \
-    opencode run --auto --format json \
+    opencode run --print-logs --log-level "${OPENCODE_LOG_LEVEL:-INFO}" --auto --format json \
       "${attach_args[@]}" \
       --model "${MODEL}" \
       --agent "${agent}" \
@@ -66,4 +66,3 @@ parse_verdict() {
   fi
   printf 'FAIL'
 }
-
