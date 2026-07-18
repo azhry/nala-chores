@@ -28,6 +28,8 @@ type RunRequest struct {
 	Prompt         string `json:"prompt"`
 	WorkDirectory  string `json:"work_directory"`
 	HarnessRepoURL string `json:"harness_repo_url"`
+	AgentProvider  string `json:"agent_provider"`
+	AgentModel     string `json:"agent_model"`
 	CreateMR       bool   `json:"create_mr"`
 	IssueKey       string `json:"issue_key"`
 	LinearIssueKey string `json:"linear_issue_key"`
@@ -46,6 +48,8 @@ type Run struct {
 	Prompt         string     `json:"prompt,omitempty"`
 	WorkDirectory  string     `json:"work_directory"`
 	HarnessRepoURL string     `json:"harness_repo_url,omitempty"`
+	AgentProvider  string     `json:"agent_provider"`
+	AgentModel     string     `json:"agent_model"`
 	CreateMR       bool       `json:"create_mr"`
 	IssueKey       string     `json:"issue_key,omitempty"`
 	LinearIssueKey string     `json:"linear_issue_key,omitempty"`
@@ -76,6 +80,8 @@ type ConfigurationInput struct {
 	SourceBranch        string `json:"source_branch"`
 	WorkDirectory       string `json:"work_directory"`
 	HarnessRepoURL      string `json:"harness_repo_url"`
+	AgentProvider       string `json:"agent_provider"`
+	AgentModel          string `json:"agent_model"`
 	HarnessName         string `json:"harness_name"`
 	SandboxSize         string `json:"sandbox_size"`
 	ConfigPath          string `json:"config_path"`
@@ -83,9 +89,11 @@ type ConfigurationInput struct {
 	PushChanges         bool   `json:"push_changes"`
 	GitHubToken         string `json:"github_token"`
 	OpenCodeAPIKey      string `json:"opencode_api_key"`
+	KiloAPIKey          string `json:"kilo_api_key"`
 	LinearAPIKey        string `json:"linear_api_key"`
 	ClearGitHubToken    bool   `json:"clear_github_token"`
 	ClearOpenCodeAPIKey bool   `json:"clear_opencode_api_key"`
+	ClearKiloAPIKey     bool   `json:"clear_kilo_api_key"`
 	ClearLinearAPIKey   bool   `json:"clear_linear_api_key"`
 }
 
@@ -96,6 +104,8 @@ type Configuration struct {
 	SourceBranch      string    `json:"source_branch"`
 	WorkDirectory     string    `json:"work_directory"`
 	HarnessRepoURL    string    `json:"harness_repo_url,omitempty"`
+	AgentProvider     string    `json:"agent_provider"`
+	AgentModel        string    `json:"agent_model"`
 	HarnessName       string    `json:"harness_name"`
 	SandboxSize       string    `json:"sandbox_size"`
 	ConfigPath        string    `json:"config_path,omitempty"`
@@ -103,6 +113,7 @@ type Configuration struct {
 	PushChanges       bool      `json:"push_changes"`
 	HasGitHubToken    bool      `json:"has_github_token"`
 	HasOpenCodeAPIKey bool      `json:"has_opencode_api_key"`
+	HasKiloAPIKey     bool      `json:"has_kilo_api_key"`
 	HasLinearAPIKey   bool      `json:"has_linear_api_key"`
 	CreatedAt         time.Time `json:"created_at"`
 	UpdatedAt         time.Time `json:"updated_at"`
@@ -111,6 +122,7 @@ type Configuration struct {
 type ConfigurationSecret struct {
 	GitHubToken    string
 	OpenCodeAPIKey string
+	KiloAPIKey     string
 	LinearAPIKey   string
 }
 

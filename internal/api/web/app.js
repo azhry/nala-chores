@@ -79,9 +79,12 @@ function renderConfigs() {
       <div class="config-meta">
         <span>${escapeHTML(cfg.source_branch)}</span>
         <span>${escapeHTML(cfg.sandbox_size)}</span>
+        <span>${escapeHTML(cfg.agent_provider || "opencode")}</span>
+        <span>${escapeHTML(cfg.agent_model || "opencode/big-pickle")}</span>
         <span>${cfg.has_github_token ? "GitHub" : "No GitHub key"}</span>
         <span>${cfg.has_linear_api_key ? "Linear" : "No Linear key"}</span>
         <span>${cfg.has_opencode_api_key ? "OpenCode" : "No OpenCode key"}</span>
+        <span>${cfg.has_kilo_api_key ? "Kilo" : "No Kilo key"}</span>
       </div>
     </article>
   `).join("");
@@ -120,6 +123,8 @@ function renderDetail(run) {
     ${detail("Configuration", run.config_name || run.config_id)}
     ${detail("Repository", run.repo_url, true)}
     ${detail("Harness repository", run.harness_repo_url || "None", true)}
+    ${detail("Agent provider", run.agent_provider || "opencode")}
+    ${detail("Agent model", run.agent_model || "opencode/big-pickle")}
     ${detail("Branch", run.source_branch)}
     ${detail("Linear issue", run.linear_issue_key || "None")}
     ${detail("Job", run.job_name || "Pending")}
@@ -150,10 +155,13 @@ configForm.addEventListener("submit", async (event) => {
   data.create_mr = configForm.create_mr.checked;
   data.push_changes = configForm.push_changes.checked;
   data.clear_opencode_api_key = configForm.clear_opencode_api_key.checked;
+  data.clear_kilo_api_key = configForm.clear_kilo_api_key.checked;
   data.source_branch = data.source_branch || "main";
   data.work_directory = data.work_directory || ".";
   data.harness_name = data.harness_name || "default";
   data.sandbox_size = data.sandbox_size || "large";
+  data.agent_provider = data.agent_provider || "opencode";
+  data.agent_model = data.agent_model || (data.agent_provider === "kilocode" ? "kilo/kilo-auto/free" : "opencode/big-pickle");
 
   configMessage.textContent = "Saving configuration...";
   try {
@@ -164,6 +172,8 @@ configForm.addEventListener("submit", async (event) => {
     configForm.work_directory.value = ".";
     configForm.harness_name.value = "default";
     configForm.sandbox_size.value = "large";
+    configForm.agent_provider.value = "opencode";
+    configForm.agent_model.value = "opencode/big-pickle";
     await loadConfigs();
   } catch (error) {
     configMessage.textContent = error.message;
@@ -311,7 +321,7 @@ function entryFromJSON(event) {
   if (event.type === "text" && part.text) {
     return {
       kind: "agent",
-      title: "OpenCode",
+      title: "Agent",
       body: part.text.trim(),
       time: formatEventTime(event.timestamp),
     };
@@ -343,32 +353,14 @@ function entryFromJSON(event) {
   }
 
   if (event.type === "step_start") {
-    return {
-      kind: "event",
-      title: "Agent step started",
-      body: event.sessionID || "",
-      time: formatEventTime(event.timestamp),
-    };
+    return null;
   }
 
   if (event.type === "step_finish") {
-    const tokens = part.tokens?.total ? `${part.tokens.total} tokens` : "";
-    const reason = part.reason ? `Finished: ${part.reason}` : "Step finished";
-    return {
-      kind: "event",
-      title: reason,
-      body: tokens,
-      time: formatEventTime(event.timestamp),
-    };
+    return null;
   }
 
-  return {
-    kind: "event",
-    title: event.type || "Event",
-    body: JSON.stringify(event, null, 2),
-    time: formatEventTime(event.timestamp),
-    mono: true,
-  };
+  return null;
 }
 
 function entryFromFinalJSON(result) {
@@ -384,6 +376,10 @@ function entryFromFinalJSON(result) {
 }
 
 function entryFromLine(line) {
+  const clean = stripANSI(line).trim();
+  if (!clean || isInfrastructureLog(clean)) {
+    return null;
+  }
   const match = line.match(/^\[([^\]]+)\]\s*(.*)$/);
   if (match) {
     return {
@@ -392,7 +388,6 @@ function entryFromLine(line) {
       body: stripANSI(match[2]),
     };
   }
-  const clean = stripANSI(line);
   const isFailure = /fatal:|error|failed|invalid username or token/i.test(clean);
   return {
     kind: isFailure ? "error" : "log",
@@ -400,6 +395,20 @@ function entryFromLine(line) {
     body: clean,
     mono: !isFailure,
   };
+}
+
+function isInfrastructureLog(line) {
+  return [
+    /^INFO\s+\d{4}-\d{2}-\d{2}T.*\bservice=/,
+    /^ERROR\s+\d{4}-\d{2}-\d{2}T.*\bservice=/,
+    /^WARN\s+\d{4}-\d{2}-\d{2}T.*\bservice=/,
+    /^sqlite-migration:/,
+    /^Database migration complete\.$/,
+    /^Performing one time database migration/,
+    /^Warning: truncated output/,
+    /^Total output lines:/,
+    /^! agent ".+" not found\. Falling back to default agent$/,
+  ].some((pattern) => pattern.test(line));
 }
 
 function renderChatEntry(entry) {
@@ -415,7 +424,18 @@ function renderChatEntry(entry) {
 }
 
 function formatChatBody(value) {
-  return escapeHTML(value || "").replace(/\n/g, "<br>");
+  return escapeHTML(redactSecrets(value || "")).replace(/\n/g, "<br>");
+}
+
+function redactSecrets(value) {
+  return String(value || "")
+    .replace(/github_pat_[A-Za-z0-9_]+/g, "[redacted]")
+    .replace(/gh[opsur]_[A-Za-z0-9_]+/g, "[redacted]")
+    .replace(/lin_api_[A-Za-z0-9]+/g, "[redacted]")
+    .replace(/sk-[A-Za-z0-9_-]+/g, "[redacted]")
+    .replace(/eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g, "[redacted]")
+    .replace(/(https:\/\/(?:x-access-token|oauth2):)[^@\s]+(@github\.com\/)/g, "$1[redacted]$2")
+    .replace(/(https:\/\/oauth2:)[^@\s]+(@gitlab\.com\/)/g, "$1[redacted]$2");
 }
 
 function tryParseJSON(value) {

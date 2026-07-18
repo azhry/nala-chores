@@ -10,6 +10,8 @@ RUN apt-get update \
     curl \
     git \
     jq \
+    nodejs \
+    npm \
     openssh-client \
     python3 \
     python3-yaml \
@@ -19,6 +21,9 @@ RUN apt-get update \
 RUN curl -fsSL https://opencode.ai/install | bash \
   && if ! command -v opencode >/dev/null 2>&1 && [ -x /root/.opencode/bin/opencode ]; then cp /root/.opencode/bin/opencode /usr/local/bin/opencode && chmod +x /usr/local/bin/opencode; fi \
   && command -v opencode
+
+RUN npm install -g @kilocode/cli \
+  && command -v kilo
 
 RUN useradd --create-home --shell /bin/bash runner \
   && mkdir -p /opt/runner/lib /opt/runner/schemas /workspace \

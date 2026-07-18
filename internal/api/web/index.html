@@ -67,6 +67,19 @@
                   </select>
                 </label>
               </div>
+              <div class="field-grid">
+                <label>
+                  Agent provider
+                  <select name="agent_provider">
+                    <option value="opencode">OpenCode</option>
+                    <option value="kilocode">KiloCode</option>
+                  </select>
+                </label>
+                <label>
+                  Agent model
+                  <input name="agent_model" value="opencode/big-pickle" autocomplete="off" />
+                </label>
+              </div>
               <label>
                 GitHub API key
                 <input name="github_token" type="password" placeholder="github_pat_..." autocomplete="new-password" />
@@ -79,9 +92,17 @@
                 OpenCode API key
                 <input name="opencode_api_key" type="password" placeholder="Optional for opencode/big-pickle" autocomplete="new-password" />
               </label>
+              <label>
+                Kilo API key
+                <input name="kilo_api_key" type="password" placeholder="For KiloCode free models" autocomplete="new-password" />
+              </label>
               <label class="check">
                 <input type="checkbox" name="clear_opencode_api_key" />
                 <span>Clear saved OpenCode key</span>
+              </label>
+              <label class="check">
+                <input type="checkbox" name="clear_kilo_api_key" />
+                <span>Clear saved Kilo key</span>
               </label>
               <div class="toggles">
                 <label class="check"><input type="checkbox" name="push_changes" /><span>Push changes</span></label>

@@ -55,6 +55,8 @@ func submit(args []string) error {
 	promptFile := fs.String("prompt-file", "", "file containing task prompt")
 	workdir := fs.String("workdir", ".", "repo subdirectory for OpenCode")
 	harnessRepo := fs.String("harness-repo", "", "optional git URL for an external harness repository")
+	agentProvider := fs.String("agent-provider", "opencode", "agent provider: opencode or kilocode")
+	agentModel := fs.String("agent-model", "", "agent model; defaults by provider")
 	harness := fs.String("harness", "default", "harness name from .opencode-runner.yml")
 	size := fs.String("sandbox-size", "large", "sandbox size: small, large, xlarge, 2xlarge")
 	issue := fs.String("issue", "", "issue key to pass to the harness")
@@ -123,6 +125,8 @@ func submit(args []string) error {
 		Prompt:         *prompt,
 		WorkDirectory:  *workdir,
 		HarnessRepoURL: *harnessRepo,
+		AgentProvider:  *agentProvider,
+		AgentModel:     *agentModel,
 		CreateMR:       *createMR,
 		IssueKey:       *issue,
 		HarnessName:    *harness,

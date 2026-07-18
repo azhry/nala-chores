@@ -27,6 +27,7 @@ type storedConfig struct {
 	Public         runner.Configuration `json:"public"`
 	GitHubToken    string               `json:"github_token,omitempty"`
 	OpenCodeAPIKey string               `json:"opencode_api_key,omitempty"`
+	KiloAPIKey     string               `json:"kilo_api_key,omitempty"`
 	LinearAPIKey   string               `json:"linear_api_key,omitempty"`
 }
 
@@ -71,6 +72,8 @@ func (s *Memory) SaveConfig(input runner.ConfigurationInput) (runner.Configurati
 	cfg.SourceBranch = defaultString(input.SourceBranch, "main")
 	cfg.WorkDirectory = defaultString(input.WorkDirectory, ".")
 	cfg.HarnessRepoURL = input.HarnessRepoURL
+	cfg.AgentProvider = defaultString(input.AgentProvider, "opencode")
+	cfg.AgentModel = defaultAgentModel(cfg.AgentProvider, input.AgentModel)
 	cfg.HarnessName = defaultString(input.HarnessName, "default")
 	cfg.SandboxSize = defaultString(input.SandboxSize, "large")
 	cfg.ConfigPath = input.ConfigPath
@@ -86,6 +89,9 @@ func (s *Memory) SaveConfig(input runner.ConfigurationInput) (runner.Configurati
 	if input.OpenCodeAPIKey != "" {
 		secret.OpenCodeAPIKey = input.OpenCodeAPIKey
 	}
+	if input.KiloAPIKey != "" {
+		secret.KiloAPIKey = input.KiloAPIKey
+	}
 	if input.LinearAPIKey != "" {
 		secret.LinearAPIKey = input.LinearAPIKey
 	}
@@ -95,11 +101,15 @@ func (s *Memory) SaveConfig(input runner.ConfigurationInput) (runner.Configurati
 	if input.ClearOpenCodeAPIKey {
 		secret.OpenCodeAPIKey = ""
 	}
+	if input.ClearKiloAPIKey {
+		secret.KiloAPIKey = ""
+	}
 	if input.ClearLinearAPIKey {
 		secret.LinearAPIKey = ""
 	}
 	secret.Public.HasGitHubToken = secret.GitHubToken != ""
 	secret.Public.HasOpenCodeAPIKey = secret.OpenCodeAPIKey != ""
+	secret.Public.HasKiloAPIKey = secret.KiloAPIKey != ""
 	secret.Public.HasLinearAPIKey = secret.LinearAPIKey != ""
 
 	s.config[id] = secret
@@ -129,6 +139,7 @@ func (s *Memory) GetConfigSecret(id string) (runner.ConfigurationSecret, error) 
 	return runner.ConfigurationSecret{
 		GitHubToken:    cfg.GitHubToken,
 		OpenCodeAPIKey: cfg.OpenCodeAPIKey,
+		KiloAPIKey:     cfg.KiloAPIKey,
 		LinearAPIKey:   cfg.LinearAPIKey,
 	}, nil
 }
@@ -164,6 +175,8 @@ func (s *Memory) Create(req runner.RunRequest) (runner.Run, bool, error) {
 		Prompt:         req.Prompt,
 		WorkDirectory:  defaultString(req.WorkDirectory, "."),
 		HarnessRepoURL: req.HarnessRepoURL,
+		AgentProvider:  req.AgentProvider,
+		AgentModel:     req.AgentModel,
 		CreateMR:       req.CreateMR,
 		IssueKey:       req.IssueKey,
 		LinearIssueKey: req.LinearIssueKey,
@@ -186,12 +199,16 @@ func (s *Memory) Create(req runner.RunRequest) (runner.Run, bool, error) {
 		run.SourceBranch = defaultString(run.SourceBranch, cfg.Public.SourceBranch)
 		run.WorkDirectory = defaultString(run.WorkDirectory, cfg.Public.WorkDirectory)
 		run.HarnessRepoURL = defaultString(run.HarnessRepoURL, cfg.Public.HarnessRepoURL)
+		run.AgentProvider = defaultString(run.AgentProvider, cfg.Public.AgentProvider)
+		run.AgentModel = defaultString(run.AgentModel, cfg.Public.AgentModel)
 		run.HarnessName = defaultString(run.HarnessName, cfg.Public.HarnessName)
 		run.SandboxSize = defaultString(run.SandboxSize, cfg.Public.SandboxSize)
 		run.ConfigPath = defaultString(run.ConfigPath, cfg.Public.ConfigPath)
 		run.CreateMR = req.CreateMR || cfg.Public.CreateMR
 		run.PushChanges = req.PushChanges || run.CreateMR || cfg.Public.PushChanges
 	}
+	run.AgentProvider = defaultString(run.AgentProvider, "opencode")
+	run.AgentModel = defaultAgentModel(run.AgentProvider, run.AgentModel)
 
 	s.runs[run.RequestID] = run
 	if err := s.saveLocked(); err != nil {
@@ -298,6 +315,18 @@ func defaultString(value, fallback string) string {
 		return fallback
 	}
 	return value
+}
+
+func defaultAgentModel(provider, model string) string {
+	if model != "" {
+		return model
+	}
+	switch strings.ToLower(provider) {
+	case "kilo", "kilocode":
+		return "kilo/kilo-auto/free"
+	default:
+		return "opencode/big-pickle"
+	}
 }
 
 func slug(value string) string {

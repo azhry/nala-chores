@@ -3,7 +3,6 @@ package api
 import (
 	"bytes"
 	"embed"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -167,7 +167,7 @@ func (s *Server) getRunLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if run.Logs != "" {
-		writeJSON(w, http.StatusOK, map[string]string{"logs": run.Logs})
+		writeJSON(w, http.StatusOK, map[string]string{"logs": sanitizeLogOutput(run.Logs)})
 		return
 	}
 	if run.JobName == "" {
@@ -188,11 +188,11 @@ func (s *Server) getRunLogs(w http.ResponseWriter, r *http.Request) {
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		writeJSON(w, http.StatusOK, map[string]string{
-			"logs": fmt.Sprintf("Logs are not available yet.\n%s", strings.TrimSpace(string(out))),
+			"logs": sanitizeLogOutput(fmt.Sprintf("Logs are not available yet.\n%s", strings.TrimSpace(string(out)))),
 		})
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]string{"logs": string(out)})
+	writeJSON(w, http.StatusOK, map[string]string{"logs": sanitizeLogOutput(string(out))})
 }
 
 func (s *Server) listRuns(w http.ResponseWriter, r *http.Request) {
@@ -383,6 +383,9 @@ func (s *Server) syncConfigSecret(configID string) error {
 	if secret.OpenCodeAPIKey != "" {
 		data["opencode_api_key"] = secret.OpenCodeAPIKey
 	}
+	if secret.KiloAPIKey != "" {
+		data["kilo_api_key"] = secret.KiloAPIKey
+	}
 	if secret.LinearAPIKey != "" {
 		data["linear_api_key"] = secret.LinearAPIKey
 	}
@@ -398,7 +401,7 @@ func (s *Server) syncConfigSecret(configID string) error {
 			"namespace": s.cfg.Namespace,
 		},
 		"type": "Opaque",
-		"data": encodeSecretData(data),
+		"stringData": data,
 	}
 	body, err := json.Marshal(manifest)
 	if err != nil {
@@ -434,14 +437,6 @@ func configSecretName(configID string) string {
 	return "runner-config-" + name
 }
 
-func encodeSecretData(values map[string]string) map[string]string {
-	out := map[string]string{}
-	for key, value := range values {
-		out[key] = base64.StdEncoding.EncodeToString([]byte(value))
-	}
-	return out
-}
-
 func (s *Server) captureLogs(id, jobName string) {
 	if jobName == "" || !s.cfg.ApplyJobs {
 		return
@@ -453,8 +448,32 @@ func (s *Server) captureLogs(id, jobName string) {
 		logs = "Logs were not available when the run completed."
 	}
 	_, _ = s.store.Update(id, func(run *runner.Run) {
-		run.Logs = logs
+		run.Logs = sanitizeLogOutput(logs)
 	})
+}
+
+var logSecretPatterns = []*regexp.Regexp{
+	regexp.MustCompile(`github_pat_[A-Za-z0-9_]+`),
+	regexp.MustCompile(`gh[opsur]_[A-Za-z0-9_]+`),
+	regexp.MustCompile(`lin_api_[A-Za-z0-9]+`),
+	regexp.MustCompile(`sk-[A-Za-z0-9_-]+`),
+	regexp.MustCompile(`eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+`),
+	regexp.MustCompile(`(https://(?:x-access-token|oauth2):)[^@\s]+(@github\.com/)`),
+	regexp.MustCompile(`(https://oauth2:)[^@\s]+(@gitlab\.com/)`),
+}
+
+func sanitizeLogOutput(value string) string {
+	out := value
+	for _, pattern := range logSecretPatterns {
+		out = pattern.ReplaceAllStringFunc(out, func(match string) string {
+			parts := pattern.FindStringSubmatch(match)
+			if len(parts) == 3 {
+				return parts[1] + "[redacted]" + parts[2]
+			}
+			return "[redacted]"
+		})
+	}
+	return out
 }
 
 func validateRequest(req runner.RunRequest) error {

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
 CONFIG_PATH="${CONFIG_PATH:-.opencode-runner.yml}"
-MODEL="opencode/big-pickle"
+AGENT_PROVIDER="${AGENT_PROVIDER:-opencode}"
+MODEL="${AGENT_MODEL:-opencode/big-pickle}"
 AGENT_MODE="run"
 PLAN_AGENT="plan-agent"
 EDIT_AGENT="edit-agent"
@@ -13,13 +14,59 @@ SESSION_TIMEOUT="2h"
 INIT_SCRIPT=""
 ISSUE_CONTEXT=""
 
+looks_like_base64_secret() {
+  local value="$1"
+  [[ "${value}" =~ ^[A-Za-z0-9+/]+={0,2}$ ]] && (( ${#value} % 4 == 0 ))
+}
+
+decode_secret_if_needed() {
+  local value="$1"
+  local decoded
+  if ! looks_like_base64_secret "${value}"; then
+    printf '%s' "${value}"
+    return
+  fi
+  decoded="$(printf '%s' "${value}" | base64 -d 2>/dev/null || true)"
+  case "${decoded}" in
+    github_pat_*|ghp_*|gho_*|ghu_*|ghs_*|ghr_*|sk-*|lin_api_*|eyJ*)
+      printf '%s' "${decoded}"
+      ;;
+    *)
+      printf '%s' "${value}"
+      ;;
+  esac
+}
+
+normalize_secrets() {
+  if [[ -n "${GIT_TOKEN:-}" ]]; then
+    GIT_TOKEN="$(decode_secret_if_needed "${GIT_TOKEN}")"
+    export GIT_TOKEN
+  fi
+  if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+    GITHUB_TOKEN="$(decode_secret_if_needed "${GITHUB_TOKEN}")"
+    export GITHUB_TOKEN
+  fi
+  if [[ -n "${OPENCODE_API_KEY:-}" ]]; then
+    OPENCODE_API_KEY="$(decode_secret_if_needed "${OPENCODE_API_KEY}")"
+    export OPENCODE_API_KEY
+  fi
+  if [[ -n "${KILO_API_KEY:-}" ]]; then
+    KILO_API_KEY="$(decode_secret_if_needed "${KILO_API_KEY}")"
+    export KILO_API_KEY
+  fi
+  if [[ -n "${LINEAR_API_KEY:-}" ]]; then
+    LINEAR_API_KEY="$(decode_secret_if_needed "${LINEAR_API_KEY}")"
+    export LINEAR_API_KEY
+  fi
+}
+
 configure_git_credentials() {
   git config --global user.name "${GIT_AUTHOR_NAME:-OpenCode Runner}"
   git config --global user.email "${GIT_AUTHOR_EMAIL:-opencode-runner@example.invalid}"
   git config --global --add safe.directory /workspace/repo
 
   if [[ -n "${GIT_TOKEN:-}" ]]; then
-    git config --global url."https://oauth2:${GIT_TOKEN}@github.com/".insteadOf "https://github.com/"
+    git config --global url."https://x-access-token:${GIT_TOKEN}@github.com/".insteadOf "https://github.com/"
     git config --global url."https://oauth2:${GIT_TOKEN}@gitlab.com/".insteadOf "https://gitlab.com/"
   fi
 }
@@ -72,6 +119,7 @@ load_harness_config() {
   fi
 
   MODEL="$(yaml_value ".agent.model" "${MODEL}")"
+  AGENT_PROVIDER="$(yaml_value ".agent.provider" "${AGENT_PROVIDER}")"
   AGENT_MODE="$(yaml_value ".agent.mode" "${AGENT_MODE}")"
   PLAN_AGENT="$(yaml_value ".agent.agents.plan" "${PLAN_AGENT}")"
   EDIT_AGENT="$(yaml_value ".agent.agents.edit" "${EDIT_AGENT}")"
@@ -104,6 +152,24 @@ clone_harness_repo() {
 
   log "cloning harness repository"
   git clone --depth 1 "${HARNESS_REPO_URL}" /workspace/my-harnesses
+}
+
+prepare_kilo_config() {
+  case "${AGENT_PROVIDER}" in
+    kilo|kilocode) ;;
+    *) return ;;
+  esac
+
+  mkdir -p "${HOME}/.config/kilo"
+  jq -n \
+    --arg model "${MODEL}" \
+    '{
+      "$schema": "https://app.kilo.ai/config.json",
+      model: $model,
+      permission: "allow",
+      formatter: false,
+      lsp: false
+    }' > "${HOME}/.config/kilo/kilo.json"
 }
 
 prepare_opencode_config() {

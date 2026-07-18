@@ -28,6 +28,8 @@ Submit from a git checkout:
 go run ./cmd/runner-cli submit \
   --prompt "Implement the requested change and update tests." \
   --harness-repo https://github.com/your-org/my-harnesses.git \
+  --agent-provider kilocode \
+  --agent-model kilo/kilo-auto/free \
   --workdir . \
   --no-mr
 ```
@@ -62,10 +64,10 @@ The web UI can also store per-configuration GitHub, Linear, and OpenCode keys. E
 Build and load images:
 
 ```bash
-docker build -t opencode-runner-backend:harness-repo images/backend
-docker build -t opencode-runner-manager:harness-repo -f Dockerfile.manager .
-minikube image load opencode-runner-backend:harness-repo
-minikube image load opencode-runner-manager:harness-repo
+docker build -t opencode-runner-backend:kilocode images/backend
+docker build -t opencode-runner-manager:kilocode -f Dockerfile.manager .
+minikube image load opencode-runner-backend:kilocode
+minikube image load opencode-runner-manager:kilocode
 ```
 
 Deploy manager:
@@ -94,8 +96,10 @@ The sample harness defaults to OpenCode's free `opencode/big-pickle` model.
 
 Configurations can also point at an external harness repository. When `harness_repo_url` is set, the worker clones that repository to `/workspace/my-harnesses` before running OpenCode, so target repo instructions can reference harness paths such as `../my-harnesses/agent-spec-ops`.
 
+Set `agent_provider` to `opencode` or `kilocode`. OpenCode defaults to `opencode/big-pickle`; KiloCode defaults to `kilo/kilo-auto/free` and reads its credential from the saved Kilo API key.
+
 ## Web UI Flow
 
-1. Open **Configurations** and save a configuration with repo URL, optional harness repository URL, branch, GitHub API key, Linear API key, and OpenCode API key.
+1. Open **Configurations** and save a configuration with repo URL, optional harness repository URL, agent provider/model, branch, GitHub API key, Linear API key, and OpenCode or Kilo API key.
 2. Open **Run Session**, select a configuration, enter a prompt, optionally add a Linear issue key, and run it.
 3. Open **History** to inspect sessions for each configuration and view stored logs.

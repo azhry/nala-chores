@@ -21,6 +21,8 @@ run_session() {
   local session_id="${4:-}"
   local session_args=()
   local attach_args=()
+  local log_args=(--print-logs --log-level "${AGENT_LOG_LEVEL:-INFO}")
+  local agent_args=(--agent "${agent}")
 
   if [[ -n "${session_id}" ]]; then
     session_args=(--session "${session_id}")
@@ -28,16 +30,29 @@ run_session() {
   if [[ -n "${OPENCODE_ATTACH:-}" ]]; then
     attach_args=(${OPENCODE_ATTACH})
   fi
+  case "${AGENT_PROVIDER}" in
+    kilo|kilocode)
+      log_args=()
+      agent_args=()
+      ;;
+  esac
 
   timeout "${SESSION_TIMEOUT}" \
-    opencode run --print-logs --log-level "${OPENCODE_LOG_LEVEL:-INFO}" --auto --format json \
+    "${AGENT_COMMAND:-opencode}" run "${log_args[@]}" --auto --format json \
       "${attach_args[@]}" \
       --model "${MODEL}" \
-      --agent "${agent}" \
+      "${agent_args[@]}" \
       --dir "/workspace/repo/${WORK_DIR}" \
       --title "${phase}-${REQUEST_ID}" \
       "${session_args[@]}" \
       "${prompt}" | tee "/tmp/${phase}.jsonl"
+}
+
+agent_command_for_provider() {
+  case "${AGENT_PROVIDER}" in
+    kilo|kilocode) printf 'kilo' ;;
+    *) printf 'opencode' ;;
+  esac
 }
 
 parse_session_id() {

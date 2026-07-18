@@ -22,14 +22,18 @@ start_heartbeat /tmp/opencode-runner/heartbeat
 trap 'write_result failed "unexpected failure on line ${LINENO}" ""' ERR
 
 log "setup: configuring git and cloning ${SOURCE_BRANCH}"
+normalize_secrets
 configure_git_credentials
 git clone --depth 1 --branch "${SOURCE_BRANCH}" "${REPO_URL}" /workspace/repo
 clone_harness_repo
 cd /workspace/repo
 
 load_harness_config
+AGENT_COMMAND="$(agent_command_for_provider)"
+log "agent provider ${AGENT_PROVIDER}: command=${AGENT_COMMAND} model=${MODEL}"
 run_init_script
 prepare_opencode_config
+prepare_kilo_config
 load_linear_issue_context
 
 cd "/workspace/repo/${WORK_DIR}"

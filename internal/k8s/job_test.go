@@ -22,6 +22,8 @@ func TestRenderJobIncludesCoreEnvironment(t *testing.T) {
 		Prompt:         "change it",
 		WorkDirectory:  "go",
 		HarnessRepoURL: "https://github.com/example/harnesses.git",
+		AgentProvider:  "kilocode",
+		AgentModel:     "kilo/kilo-auto/free",
 		HarnessName:    "default",
 		SandboxSize:    "xlarge",
 	}
@@ -35,6 +37,8 @@ func TestRenderJobIncludesCoreEnvironment(t *testing.T) {
 		"name: run-req-1",
 		"value: \"https://github.com/example/repo.git\"",
 		"value: \"https://github.com/example/harnesses.git\"",
+		"value: \"kilocode\"",
+		"value: \"kilo/kilo-auto/free\"",
 		"value: \"feature/demo\"",
 		"memory: \"16Gi\"",
 	} {

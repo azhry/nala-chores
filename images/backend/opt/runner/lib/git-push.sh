@@ -6,6 +6,13 @@ CHANGES_PUSHED="false"
 commit_changes() {
   cd /workspace/repo
   if git diff --quiet && git diff --cached --quiet; then
+    local ahead
+    ahead="$(git rev-list --count "origin/${SOURCE_BRANCH}..HEAD" 2>/dev/null || printf '0')"
+    if [[ "${ahead}" != "0" ]]; then
+      log "using ${ahead} existing local commit(s)"
+      CHANGES_COMMITTED="true"
+      return
+    fi
     log "no changes to commit"
     return
   fi

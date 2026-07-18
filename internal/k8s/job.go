@@ -136,6 +136,10 @@ spec:
               value: {{ .Run.WorkDirectory | printf "%q" }}
             - name: HARNESS_REPO_URL
               value: {{ .Run.HarnessRepoURL | printf "%q" }}
+            - name: AGENT_PROVIDER
+              value: {{ .Run.AgentProvider | printf "%q" }}
+            - name: AGENT_MODEL
+              value: {{ .Run.AgentModel | printf "%q" }}
             - name: HARNESS_NAME
               value: {{ .Run.HarnessName | printf "%q" }}
             - name: SANDBOX_SIZE
@@ -177,6 +181,12 @@ spec:
                 secretKeyRef:
                   name: {{ .Secret }}
                   key: opencode_api_key
+                  optional: true
+            - name: KILO_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Secret }}
+                  key: kilo_api_key
                   optional: true
             - name: LINEAR_API_KEY
               valueFrom:
