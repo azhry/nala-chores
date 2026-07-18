@@ -5,161 +5,228 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Nala Chores is a Minikube-deployed agent runner for configuration-driven GitHub and Linear work with real PR-producing sessions."
+      content="Nala Chores is a Minikube agent runner for Linear-scoped GitHub work, saved project configurations, readable session logs, and real pull-request output."
     />
     <title>Nala Chores - Agent Runner</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Geist:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <header class="site-header" data-floating>
+    <header class="topbar" data-elevated="false">
       <a class="brand" href="#top" aria-label="Nala Chores home">
-        <span class="brand-mark">NC</span>
+        <span class="brand-mark" aria-hidden="true">
+          <span></span>
+          <span></span>
+        </span>
         <span>Nala Chores</span>
       </a>
-      <nav aria-label="Primary navigation">
-        <a href="#workflow">Workflow</a>
-        <a href="#screens">Screens</a>
-        <a href="#proof">Proof</a>
+      <nav aria-label="Primary">
+        <a href="#operate">Operate</a>
+        <a href="#interface">Interface</a>
+        <a href="#guardrails">Guardrails</a>
         <a href="https://github.com/azhry/nala-chores">GitHub</a>
       </nav>
     </header>
 
     <main id="top">
       <section class="hero" aria-labelledby="hero-title">
-        <div class="hero-media" aria-hidden="true">
-          <img src="./assets/run-details.png" alt="" />
-          <div class="hero-scrim"></div>
-        </div>
-        <div class="hero-content">
-          <p class="eyebrow">Minikube agent runner for GitHub and Linear</p>
-          <h1 id="hero-title">Nala Chores</h1>
-          <p class="hero-copy">
-            Configure project credentials once, run agent sessions from a web UI, store the transcript,
-            and require every validation run to create a real pull request.
+        <div class="hero-copy">
+          <p class="eyebrow">Minikube agent runner</p>
+          <h1 id="hero-title">Nala Chores runs agents like production jobs.</h1>
+          <p>
+            Save a project profile, attach Linear context, launch KiloCode or OpenCode in Kubernetes,
+            and keep every session inspectable until it creates the pull request it was asked for.
           </p>
-          <div class="hero-actions" aria-label="Project actions">
-            <a class="button primary" href="https://github.com/azhry/nala-chores">View Repository</a>
-            <a class="button secondary" href="#workflow">See Workflow</a>
+          <div class="hero-actions">
+            <a class="button primary" href="https://github.com/azhry/nala-chores">
+              <span>View repo</span>
+              <svg aria-hidden="true" viewBox="0 0 20 20">
+                <path d="M7.2 4.6h8.2v8.2M15.1 4.9 4.7 15.3" />
+              </svg>
+            </a>
+            <a class="button secondary" href="#interface">See the UI</a>
           </div>
-          <dl class="hero-metrics" aria-label="Runner status highlights">
+        </div>
+
+        <div class="console-preview" aria-label="Nala Chores run preview">
+          <div class="window-bar">
+            <div class="traffic" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <span>nala-grow / AZH-282</span>
+          </div>
+          <div class="run-header">
             <div>
-              <dt>Runner</dt>
-              <dd>KiloCode free model</dd>
+              <span class="status-dot"></span>
+              <strong>Run succeeded</strong>
+            </div>
+            <a href="https://github.com/azhry/nala-grow/pull/55">PR #55</a>
+          </div>
+          <div class="chat-log">
+            <article class="message runner">
+              <span>Runner</span>
+              <p>Loaded Linear issue AZH-282 and locked scope to the requested feeding task.</p>
+            </article>
+            <article class="message agent">
+              <span>KiloCode</span>
+              <p>Found FE-006 already implemented. Adding task-relevant tests only.</p>
+            </article>
+            <article class="message tool">
+              <span>Checks</span>
+              <p>npm run test:unit - 226 passed across 22 suites.</p>
+            </article>
+          </div>
+          <dl class="run-facts">
+            <div>
+              <dt>Provider</dt>
+              <dd>KiloCode free</dd>
             </div>
             <div>
-              <dt>Deploy</dt>
+              <dt>Cluster</dt>
               <dd>Minikube</dd>
             </div>
             <div>
-              <dt>Output</dt>
-              <dd>Real PRs only</dd>
+              <dt>Scope</dt>
+              <dd>Linear locked</dd>
             </div>
           </dl>
         </div>
       </section>
 
-      <section class="section" id="workflow" aria-labelledby="workflow-title">
+      <section class="strip" aria-label="Runner capabilities">
+        <div>
+          <strong>Saved secrets</strong>
+          <span>Credentials are configured once per project profile.</span>
+        </div>
+        <div>
+          <strong>Harness-aware</strong>
+          <span>Profiles can point at the harness repo a project expects.</span>
+        </div>
+        <div>
+          <strong>PR-producing</strong>
+          <span>Successful runs must push real changes and return a PR URL.</span>
+        </div>
+      </section>
+
+      <section class="section operate" id="operate" aria-labelledby="operate-title">
         <div class="section-heading">
-          <p class="eyebrow">The loop</p>
-          <h2 id="workflow-title">A runner that proves work happened.</h2>
+          <p class="eyebrow">Operate</p>
+          <h2 id="operate-title">The workflow is deliberately narrow.</h2>
           <p>
-            Nala Chores is built around one rule: a successful agent session must leave behind a
-            pushed branch, a pull request URL, and enough logs to understand what happened.
+            Nala Chores is not a general chat box. It is a run launcher with the context, logs,
+            and guardrails needed to turn a specific repo task into a reviewable branch.
           </p>
         </div>
-        <div class="workflow-grid">
-          <article class="workflow-card">
-            <span class="step">01</span>
-            <h3>Save a project profile</h3>
-            <p>Store GitHub, Linear, OpenCode, KiloCode, repo, branch, harness URL, and sandbox size.</p>
+        <div class="flow">
+          <article>
+            <span>01</span>
+            <h3>Configure</h3>
+            <p>Add repo URL, base branch, GitHub token, Linear token, agent provider, model, sandbox size, and harness URL.</p>
           </article>
-          <article class="workflow-card">
-            <span class="step">02</span>
-            <h3>Run an agent session</h3>
-            <p>Select a configuration, write the task prompt, attach a Linear issue key, and launch.</p>
+          <article>
+            <span>02</span>
+            <h3>Launch</h3>
+            <p>Select a profile, enter the prompt, attach the Linear issue key, and run it as an isolated Kubernetes job.</p>
           </article>
-          <article class="workflow-card">
-            <span class="step">03</span>
-            <h3>Watch the transcript</h3>
-            <p>Read agent messages, tool calls, runner milestones, failures, pushes, and PR creation.</p>
+          <article>
+            <span>03</span>
+            <h3>Inspect</h3>
+            <p>Read the transcript as conversation: runner milestones, agent messages, tool output, errors, branches, and PR links.</p>
           </article>
-          <article class="workflow-card">
-            <span class="step">04</span>
-            <h3>Verify the PR</h3>
-            <p>Runs with PR creation enabled cannot succeed without committed changes and a PR URL.</p>
+          <article>
+            <span>04</span>
+            <h3>Review</h3>
+            <p>Open the generated PR only after the runner verifies there were real repo changes and a non-draft pull request.</p>
           </article>
         </div>
       </section>
 
-      <section class="section screens" id="screens" aria-labelledby="screens-title">
-        <div class="section-heading compact">
+      <section class="section interface" id="interface" aria-labelledby="interface-title">
+        <div class="section-heading">
           <p class="eyebrow">Interface</p>
-          <h2 id="screens-title">Dense, inspectable, mobile-ready operations.</h2>
+          <h2 id="interface-title">Built for reading long-running work.</h2>
+          <p>
+            The web UI is organized around the repeated things you actually do: manage project
+            configurations, start scoped sessions, and audit history without reading raw JSON.
+          </p>
         </div>
-        <div class="screen-stage">
-          <div class="screen-copy">
-            <div class="segmented" role="tablist" aria-label="Screenshots">
-              <button class="active" type="button" data-shot="run-details" role="tab" aria-selected="true">
-                Details
-              </button>
-              <button type="button" data-shot="configurations" role="tab" aria-selected="false">Configs</button>
-              <button type="button" data-shot="run-session" role="tab" aria-selected="false">Run</button>
-              <button type="button" data-shot="history" role="tab" aria-selected="false">History</button>
-            </div>
-            <h3 data-shot-title>Session details</h3>
-            <p data-shot-body>
-              Chat-style logs separate agent reasoning, tool output, errors, and runner milestones so
-              long sessions stay readable.
-            </p>
-          </div>
-          <figure class="device-frame">
+
+        <div class="showcase">
+          <aside class="shot-picker" aria-label="Screenshot selector">
+            <button class="active" type="button" data-shot="run-details" aria-pressed="true">
+              <strong>Session detail</strong>
+              <span>Chat logs, status, branch, and PR output.</span>
+            </button>
+            <button type="button" data-shot="configurations" aria-pressed="false">
+              <strong>Configurations</strong>
+              <span>Saved repo credentials and harness settings.</span>
+            </button>
+            <button type="button" data-shot="run-session" aria-pressed="false">
+              <strong>Run form</strong>
+              <span>Prompt, profile selector, and Linear issue key.</span>
+            </button>
+            <button type="button" data-shot="history" aria-pressed="false">
+              <strong>History</strong>
+              <span>Every run grouped by configuration and outcome.</span>
+            </button>
+          </aside>
+
+          <figure class="shot-frame">
             <img
               data-shot-image
               src="./assets/run-details.png"
-              alt="Nala Chores session detail screen with chat logs and run controls"
+              alt="Nala Chores session detail screen showing readable chat-style run logs"
             />
+            <figcaption>
+              <strong data-shot-title>Session detail</strong>
+              <span data-shot-body>Chat logs separate runner milestones, agent output, tool calls, failures, and PR results.</span>
+            </figcaption>
           </figure>
         </div>
       </section>
 
-      <section class="section proof" id="proof" aria-labelledby="proof-title">
-        <div class="proof-panel">
+      <section class="section guardrails" id="guardrails" aria-labelledby="guardrails-title">
+        <div class="guardrail-copy">
+          <p class="eyebrow">Guardrails</p>
+          <h2 id="guardrails-title">The runner refuses nearby work.</h2>
+          <p>
+            Linear-scoped sessions must load the issue context. PR-enabled runs must leave a Git diff.
+            If an agent cannot complete the specified task, it must fail clearly instead of inventing
+            documentation, verification notes, or unrelated cleanup.
+          </p>
+        </div>
+        <div class="policy-list">
           <div>
-            <p class="eyebrow">Runner guarantees</p>
-            <h2 id="proof-title">No more fake green checks.</h2>
-            <p>
-              The runner now rejects PR-enabled sessions that produce no repository changes. If the
-              agent finishes without a Git diff, Nala Chores sends it back for a real filesystem fix.
-            </p>
+            <span></span>
+            <strong>No substitute tasks</strong>
+            <p>The prompt explicitly forbids runner-verification and docs-only fallbacks.</p>
           </div>
-          <div class="terminal" aria-label="Latest verified run">
-            <div class="terminal-bar">
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
-            <pre><code>run: nala-grow-real-e2e-v9-1784372259
-status: SUCCEEDED
-model: kilo/kilo-auto/free
-pr: https://github.com/azhry/nala-grow/pull/54
-draft: false
-sections: Summary, Verification, Risk, Runner Evidence</code></pre>
+          <div>
+            <span></span>
+            <strong>Linear context required</strong>
+            <p>When an issue key is provided, missing Linear context is a hard failure.</p>
+          </div>
+          <div>
+            <span></span>
+            <strong>Real PR contract</strong>
+            <p>A successful run must produce committed changes, push a branch, and return a PR URL.</p>
           </div>
         </div>
       </section>
 
-      <section class="section install" aria-labelledby="install-title">
+      <section class="section deploy" aria-labelledby="deploy-title">
         <div class="section-heading compact">
-          <p class="eyebrow">Local deploy</p>
-          <h2 id="install-title">Start it in Minikube.</h2>
+          <p class="eyebrow">Deploy</p>
+          <h2 id="deploy-title">Bring it up locally.</h2>
         </div>
-        <div class="command-card">
+        <div class="command">
           <button class="copy-button" type="button" data-copy-target="install-command">Copy</button>
           <pre id="install-command"><code>minikube start --cpus 6 --memory 12288 --driver docker
 kubectl apply -f deploy/minikube/namespace.yaml

@@ -1,56 +1,62 @@
 const shots = {
   "run-details": {
     src: "./assets/run-details.png",
-    alt: "Nala Chores session detail screen with chat logs and run controls",
-    title: "Session details",
-    body:
-      "Chat-style logs separate agent messages, tool output, errors, and runner milestones so long sessions stay readable.",
+    alt: "Nala Chores session detail screen showing readable chat-style run logs",
+    title: "Session detail",
+    body: "Chat logs separate runner milestones, agent output, tool calls, failures, and PR results.",
   },
   configurations: {
     src: "./assets/configurations.png",
     alt: "Nala Chores configurations screen with repository, harness, agent, and secret controls",
-    title: "Saved configurations",
-    body:
-      "Project profiles keep credentials stable, show secret presence without exposing values, and make repeat runs fast.",
+    title: "Configurations",
+    body: "Saved profiles keep repo details, credentials, agent providers, models, and harness URLs together.",
   },
   "run-session": {
     src: "./assets/run-session.png",
-    alt: "Nala Chores run session screen with configuration selector and prompt field",
-    title: "Run session",
-    body:
-      "A focused prompt surface for selecting a configuration, attaching issue context, and launching the agent.",
+    alt: "Nala Chores run form with configuration selector, prompt field, and Linear issue input",
+    title: "Run form",
+    body: "The launch surface stays focused on one configuration, one prompt, and one issue key.",
   },
   history: {
     src: "./assets/history.png",
-    alt: "Nala Chores history screen with session list and status badges",
-    title: "Run history",
-    body:
-      "A dense run ledger keeps every configuration's session history, phase, branch, and pull request result inspectable.",
+    alt: "Nala Chores history view with run statuses, branches, and pull request links",
+    title: "History",
+    body: "Each configuration keeps a readable run ledger with outcomes, branches, timestamps, and PR links.",
   },
 };
 
+const topbar = document.querySelector(".topbar");
 const image = document.querySelector("[data-shot-image]");
 const title = document.querySelector("[data-shot-title]");
 const body = document.querySelector("[data-shot-body]");
-const tabButtons = Array.from(document.querySelectorAll("[data-shot]"));
+const shotButtons = Array.from(document.querySelectorAll("[data-shot]"));
+
+function setHeaderState() {
+  topbar?.setAttribute("data-elevated", String(window.scrollY > 8));
+}
 
 function setShot(id) {
   const shot = shots[id];
-  if (!shot) return;
+  if (!shot || !image || !title || !body) return;
 
-  tabButtons.forEach((button) => {
+  shotButtons.forEach((button) => {
     const selected = button.dataset.shot === id;
     button.classList.toggle("active", selected);
-    button.setAttribute("aria-selected", String(selected));
+    button.setAttribute("aria-pressed", String(selected));
   });
 
-  image.src = shot.src;
-  image.alt = shot.alt;
-  title.textContent = shot.title;
-  body.textContent = shot.body;
+  image.dataset.changing = "true";
+
+  window.setTimeout(() => {
+    image.src = shot.src;
+    image.alt = shot.alt;
+    title.textContent = shot.title;
+    body.textContent = shot.body;
+    image.dataset.changing = "false";
+  }, 110);
 }
 
-tabButtons.forEach((button) => {
+shotButtons.forEach((button) => {
   button.addEventListener("click", () => setShot(button.dataset.shot));
 });
 
@@ -61,9 +67,13 @@ document.querySelectorAll("[data-copy-target]").forEach((button) => {
     if (!text) return;
 
     await navigator.clipboard.writeText(text);
+    const previous = button.textContent;
     button.textContent = "Copied";
     window.setTimeout(() => {
-      button.textContent = "Copy";
-    }, 1400);
+      button.textContent = previous;
+    }, 1300);
   });
 });
+
+setHeaderState();
+window.addEventListener("scroll", setHeaderState, { passive: true });
