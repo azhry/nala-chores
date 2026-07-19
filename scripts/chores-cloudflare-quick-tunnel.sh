@@ -23,11 +23,56 @@ if ! command -v cloudflared >/dev/null 2>&1; then
   exit 1
 fi
 
+port_listener_pids() {
+  if ! command -v lsof >/dev/null 2>&1; then
+    return 0
+  fi
+  lsof -tiTCP:"${LOCAL_PORT}" -sTCP:LISTEN 2>/dev/null || true
+}
+
+clear_stale_port_forward() {
+  local pids=()
+  local pid
+  while IFS= read -r pid; do
+    [[ -n "${pid}" ]] && pids+=("${pid}")
+  done < <(port_listener_pids)
+
+  if [[ "${#pids[@]}" -eq 0 ]]; then
+    return 0
+  fi
+
+  for pid in "${pids[@]}"; do
+    local command
+    command="$(ps -p "${pid}" -o command= 2>/dev/null || true)"
+    if [[ "${command}" == *kubectl* && "${command}" == *port-forward* && "${command}" == *ingress-nginx-controller* ]]; then
+      echo "Stopping stale ingress port-forward on ${LOCAL_PORT} (pid ${pid})..."
+      kill "${pid}" >/dev/null 2>&1 || true
+    else
+      echo "Port ${LOCAL_PORT} is already in use by pid ${pid}:" >&2
+      echo "  ${command}" >&2
+      echo "Stop that process or rerun with a different port, e.g. LOCAL_PORT=8089 $0" >&2
+      exit 1
+    fi
+  done
+
+  for _ in {1..20}; do
+    if [[ -z "$(port_listener_pids)" ]]; then
+      return 0
+    fi
+    sleep 0.2
+  done
+
+  echo "Port ${LOCAL_PORT} is still busy after stopping stale port-forward processes." >&2
+  exit 1
+}
+
 echo "Ensuring minikube ingress addon is enabled..."
 minikube addons enable ingress >/dev/null
 
 echo "Applying hostless ingress for Cloudflare Quick Tunnel..."
 "${KUBECTL_BIN}" apply -f "${ROOT_DIR}/deploy/minikube/ingress-cloudflare-quick.yaml"
+
+clear_stale_port_forward
 
 cleanup() {
   if [[ -n "${PORT_FORWARD_PID:-}" ]]; then
