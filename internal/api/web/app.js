@@ -662,7 +662,32 @@ function parseLogEntries(raw) {
     entries.push({ kind: "log", title: "Raw output", body: jsonBlock.join("\n"), mono: true });
   }
 
-  return entries;
+  return dedupeLogEntries(entries);
+}
+
+function dedupeLogEntries(entries) {
+  const seen = new Set();
+  const unique = [];
+  for (const entry of entries) {
+    const key = logEntryKey(entry);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(entry);
+  }
+  return unique;
+}
+
+function logEntryKey(entry) {
+  return [
+    entry.kind || "",
+    entry.title || "",
+    entry.time || "",
+    normalizeLogBody(entry.body),
+  ].join("\u001f");
+}
+
+function normalizeLogBody(value) {
+  return stripANSI(value).trim().replace(/\s+/g, " ");
 }
 
 function entryFromJSON(event) {
