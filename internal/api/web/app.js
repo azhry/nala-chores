@@ -1,4 +1,4 @@
-const { createElement: h, useCallback, useEffect, useMemo, useState } = React;
+const { createElement: h, useCallback, useEffect, useMemo, useRef, useState } = React;
 
 const DEFAULT_CONFIG = {
   id: "",
@@ -391,11 +391,20 @@ function RunView({ configs, selectedConfigID, setSelectedConfigID, onRun, messag
 
 function HistoryView({ configs, runs, historyConfigID, setHistoryConfigID, selectedRun, selectedRunID, logs, onRefreshRuns, onSelectRun, onRefreshLogs, onStop }) {
   const entries = useMemo(() => parseLogEntries(logs), [logs]);
+  const logRef = useRef(null);
+  const live = Boolean(selectedRun && !isTerminal(selectedRun.phase));
+  const logState = selectedRun ? (live ? "Streaming" : "Finished") : "Idle";
 
   useEffect(() => {
     if (selectedRunID || !runs.length) return;
     onSelectRun(runs[0].request_id);
   }, [onSelectRun, runs, selectedRunID]);
+
+  useEffect(() => {
+    const node = logRef.current;
+    if (!node) return;
+    node.scrollTop = node.scrollHeight;
+  }, [entries.length, logs, selectedRunID]);
 
   return h("section", { className: "history-grid" },
     h("div", { className: "ops-card runs-panel" },
@@ -428,13 +437,14 @@ function HistoryView({ configs, runs, historyConfigID, setHistoryConfigID, selec
         h(CardHeader, {
           icon: "terminal",
           title: "Session Transcript",
-          subtitle: selectedRun ? selectedRun.request_id : "Select a run to read the transcript.",
+          subtitle: selectedRun ? `${selectedRun.request_id} · ${logState}${selectedRun.updated_at ? ` · updated ${formatTime(selectedRun.updated_at)}` : ""}` : "Select a run to read the transcript.",
           action: h("div", { className: "header-actions" },
+            h(StatusIndicator, { live, phase: selectedRun?.phase }),
             h("button", { className: "ghost-button", type: "button", disabled: !selectedRunID, onClick: onRefreshLogs }, h(Icon, { name: "sync" }), "Refresh"),
             h("button", { className: "danger-button", type: "button", disabled: !selectedRun || isTerminal(selectedRun.phase), onClick: onStop }, "Stop")
           ),
         }),
-        h("div", { className: "chat-log" },
+        h("div", { className: "chat-log", ref: logRef },
           entries.length ? entries.map((entry, index) => h(ChatEntry, { key: `${entry.title}-${index}`, entry })) : h(EmptyState, { title: "No logs", body: selectedRun ? "Logs are not available yet." : "Select a run to read the transcript." })
         )
       ),
@@ -571,6 +581,14 @@ function Metric({ label, value }) {
 
 function Badge({ tone = "muted", children }) {
   return h("span", { className: `badge ${tone}` }, children);
+}
+
+function StatusIndicator({ live, phase }) {
+  if (!phase) return h(Badge, { tone: "muted" }, "NO RUN");
+  return h("span", { className: `stream-indicator ${live ? "live" : "done"}` },
+    h("span", { "aria-hidden": "true" }),
+    live ? "LIVE" : String(phase).toUpperCase()
+  );
 }
 
 function Icon({ name }) {
