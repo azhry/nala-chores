@@ -817,6 +817,22 @@ textarea:focus {
   color: #fecdd3;
 }
 
+.log-toggle {
+  width: fit-content;
+  min-height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface-container);
+  color: var(--primary-soft);
+  padding: 5px 9px;
+  font: 700 11px/16px var(--sans);
+}
+
+.chat-message.system .log-toggle,
+.chat-message.event .log-toggle {
+  justify-self: center;
+}
+
 .empty-state {
   display: grid;
   gap: 4px;

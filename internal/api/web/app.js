@@ -30,6 +30,8 @@ const NAV = [
   { id: "history", label: "History", icon: "history" },
 ];
 
+const LOG_PREVIEW_LINES = 18;
+
 function App() {
   const [view, setView] = useState("configs");
   const [apiOnline, setAPIOnline] = useState(false);
@@ -611,9 +613,23 @@ function MobileNav({ view, setView }) {
 }
 
 function ChatEntry({ entry }) {
+  const [expanded, setExpanded] = useState(false);
+  const body = redactSecrets(entry.body || "");
+  const lines = body.split(/\r?\n/);
+  const collapsible = lines.length > LOG_PREVIEW_LINES;
+  const visibleBody = collapsible && !expanded
+    ? lines.slice(0, LOG_PREVIEW_LINES).join("\n")
+    : body;
+  const hiddenLines = Math.max(0, lines.length - LOG_PREVIEW_LINES);
+
   return h("article", { className: `chat-message ${entry.kind || "log"}` },
     h("div", { className: "chat-meta" }, [entry.title, entry.time].filter(Boolean).join(" · ")),
-    h("pre", { className: entry.mono ? "mono" : "" }, redactSecrets(entry.body || ""))
+    h("pre", { className: entry.mono ? "mono" : "" }, visibleBody),
+    collapsible && h("button", {
+      className: "log-toggle",
+      type: "button",
+      onClick: () => setExpanded((current) => !current),
+    }, expanded ? "Show less" : `See ${hiddenLines} more line${hiddenLines === 1 ? "" : "s"}`)
   );
 }
 
