@@ -105,6 +105,16 @@ You can also port-forward manually and use `runner-cli` with `RUNNER_API_URL=htt
 kubectl -n agent-runner port-forward svc/runner-manager 8080:8080
 ```
 
+### No-domain Cloudflare Quick Tunnel
+
+Without a domain, Cloudflare can expose Nala Chores through a temporary `trycloudflare.com` URL. This uses a hostless ingress so the random Cloudflare hostname can route through the Minikube NGINX ingress controller.
+
+```bash
+./scripts/chores-cloudflare-quick-tunnel.sh
+```
+
+Leave the script running while using the printed URL. Quick Tunnel URLs are temporary and change whenever the tunnel restarts.
+
 ## Target Repo Harness
 
 Copy `examples/.opencode-runner.yml` and `examples/sample-repo-harness/.opencode` into the target repository, then customize commands and agents for that repo.
