@@ -115,6 +115,23 @@ Without a domain, Cloudflare can expose Nala Chores through a temporary `tryclou
 
 Leave the script running while using the printed URL. Quick Tunnel URLs are temporary and change whenever the tunnel restarts.
 
+### Cloudflare Tunnel with nalanirvana.com
+
+For the stable public route, create a Cloudflare tunnel in Zero Trust and add this published application route:
+
+```text
+hostname: chores.nalanirvana.com
+service:  http://ingress-nginx-controller.ingress-nginx.svc.cluster.local:80
+```
+
+Then deploy the connector into Minikube with the tunnel token from Cloudflare:
+
+```bash
+CLOUDFLARE_TUNNEL_TOKEN='...' ./scripts/chores-cloudflare-domain-tunnel.sh
+```
+
+The script keeps the local `chores.nala.local` ingress intact, adds `chores.nalanirvana.com`, creates the `cloudflare` namespace, stores the token in `cloudflared-token`, and runs `cloudflared` inside Minikube.
+
 ## Target Repo Harness
 
 Copy `examples/.opencode-runner.yml` and `examples/sample-repo-harness/.opencode` into the target repository, then customize commands and agents for that repo.
