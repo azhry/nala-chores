@@ -124,6 +124,13 @@ hostname: chores.nalanirvana.com
 service:  http://ingress-nginx-controller.ingress-nginx.svc.cluster.local:80
 ```
 
+Add the same route for `www.chores.nalanirvana.com` if people might type the `www` form:
+
+```text
+hostname: www.chores.nalanirvana.com
+service:  http://ingress-nginx-controller.ingress-nginx.svc.cluster.local:80
+```
+
 Then deploy the connector into Minikube with the tunnel token from Cloudflare:
 
 ```bash

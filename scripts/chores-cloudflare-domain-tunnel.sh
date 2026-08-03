@@ -28,6 +28,10 @@ The tunnel's published application route should be:
   hostname: ${DOMAIN_HOST}
   service:  http://ingress-nginx-controller.ingress-nginx.svc.cluster.local:80
 
+Optional second route for people who type the www form:
+  hostname: www.${DOMAIN_HOST}
+  service:  http://ingress-nginx-controller.ingress-nginx.svc.cluster.local:80
+
 Then run:
   CLOUDFLARE_TUNNEL_TOKEN='...' $0
 EOF
@@ -52,3 +56,4 @@ echo "Deploying cloudflared inside minikube..."
 
 echo
 echo "Done. Open https://${DOMAIN_HOST} after the Cloudflare published application route is saved."
+echo "If needed, also publish https://www.${DOMAIN_HOST} to the same service."

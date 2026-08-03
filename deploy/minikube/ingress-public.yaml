@@ -16,3 +16,13 @@ spec:
                 name: runner-manager
                 port:
                   name: http
+    - host: www.chores.nalanirvana.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: runner-manager
+                port:
+                  name: http
